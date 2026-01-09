@@ -33,16 +33,26 @@
           },
           {
             "group": "Customization",
-            "pages": ["essentials/settings", "essentials/navigation"]
+            "pages": ["customization/custom-templates"]
           },
           {
-            "group": "Writing content",
+            "group": "Features",
             "pages": [
-              "essentials/markdown",
-              "essentials/code",
-              "essentials/images",
-              "essentials/reusable-snippets"
+              "features/caching",
+              "features/font-loader",
+              "features/emoji-loader",
+              "features/rtl-support",
+              "features/styles"
             ]
+          }
+        ]
+      },
+      {
+        "tab": "Recipes",
+        "groups": [
+          {
+            "group": "Next.js",
+            "pages": ["recipes/nextjs/app-router", "recipes/nextjs/page-router"]
           }
         ]
       },
@@ -50,17 +60,12 @@
         "tab": "API reference",
         "groups": [
           {
-            "group": "API documentation",
-            "pages": ["api-reference/introduction"]
+            "group": "@ogify/core",
+            "pages": ["api-reference/core"]
           },
           {
-            "group": "Endpoint examples",
-            "pages": [
-              "api-reference/endpoint/get",
-              "api-reference/endpoint/create",
-              "api-reference/endpoint/delete",
-              "api-reference/endpoint/webhook"
-            ]
+            "group": "@ogify/templates",
+            "pages": ["api-reference/templates/basic"]
           }
         ]
       }
@@ -73,12 +78,7 @@
         "label": "Contact",
         "href": "mailto:info@ogify.dev"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
-    }
+    ]
   },
   "contextual": {
     "options": [
@@ -105,12 +105,10 @@
     "default": "system"
   },
   "fonts": {
-    "family": "JetBrains Mono",
     "heading": {
       "family": "JetBrains Mono",
       "format": "woff2"
     },
-    "format": "woff2",
     "body": {
       "family": "JetBrains Mono",
       "format": "woff2"
