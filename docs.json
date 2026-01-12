@@ -1,7 +1,8 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "theme": "mint",
-  "name": "Mint Starter Kit",
+  "name": "OGify | Generate beautiful Open Graph images in minutes",
+  "description": "Zero-config dynamic Open Graph images for Next.js, Nuxt, Remix, and more. Just copy & paste the production-ready templates.",
   "colors": {
     "primary": "#4c8f5f",
     "light": "#4c8f5f",
@@ -80,8 +81,8 @@
   "navbar": {
     "links": [
       {
-        "label": "Contact",
-        "href": "mailto:info@ogify.dev"
+        "label": "GitHub",
+        "href": "https://github.com/ogify/ogify"
       }
     ]
   },
