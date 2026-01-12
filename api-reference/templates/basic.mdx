@@ -1,0 +1,245 @@
+---
+title: "basic"
+---
+
+The `basic` template is a production-ready, highly customizable template that supports three different layouts and full RTL support.
+
+## Import
+
+```typescript
+import template from "@ogify/templates/basic";
+import type { TemplateParams } from "@ogify/templates/basic";
+```
+
+## Parameters
+
+<ParamField path="title" type="string" required>
+  The main heading text
+</ParamField>
+
+<ParamField path="subtitle" type="string">
+  Optional subtitle or description text
+</ParamField>
+
+<ParamField path="brandName" type="string">
+  Your brand or company name
+</ParamField>
+
+<ParamField path="brandLogo" type="string">
+  URL to your brand logo image
+</ParamField>
+
+<ParamField path="cta" type="string">
+  Call-to-action text (e.g., "Read More", "Learn More")
+</ParamField>
+
+<ParamField path="extras" type="string[]">
+  Additional metadata items (e.g., date, author, reading time)
+</ParamField>
+
+<ParamField
+  path="layout"
+  type="'aligned' | 'centered' | 'split'"
+  default="aligned"
+>
+  Layout style for the template
+</ParamField>
+
+<ParamField path="primaryColor" type="string" default="#4c8f5f">
+  Primary color for gradients and background
+</ParamField>
+
+<ParamField path="secondaryColor" type="string" default="#faf8f5">
+  Secondary color for gradients
+</ParamField>
+
+<ParamField path="textColor" type="string" default="#fff">
+  Text color
+</ParamField>
+
+<ParamField
+  path="pattern"
+  type="string"
+  default="https://assets.ogify.dev/patterns/cubes.png"
+>
+  Background pattern image URL
+</ParamField>
+
+## Layouts
+
+<Tabs>
+  <Tab title="Aligned">
+    Left-aligned layout (or right-aligned for RTL) with brand logo at the top and metadata at the bottom.
+
+    ```typescript
+    const buffer = await renderer.renderToImage('basic', {
+      title: 'Getting Started with OGify',
+      subtitle: 'Learn how to generate beautiful Open Graph images',
+      brandName: 'OGify',
+      brandLogo: 'https://example.com/logo.png',
+      layout: 'aligned',
+      extras: ['5 min read', 'Jan 12, 2026'],
+    });
+    ```
+
+  </Tab>
+
+  <Tab title="Centered">
+    Center-aligned layout with all content centered on the canvas.
+
+    ```typescript
+    const buffer = await renderer.renderToImage('basic', {
+      title: 'Welcome to Our Platform',
+      subtitle: 'Build amazing things together',
+      brandName: 'Platform',
+      layout: 'centered',
+      cta: 'Get Started',
+    });
+    ```
+
+  </Tab>
+
+  <Tab title="Split">
+    Two-column layout with brand info on one side and content on the other.
+
+    ```typescript
+    const buffer = await renderer.renderToImage('basic', {
+      title: 'Advanced Features',
+      subtitle: 'Discover what makes us different',
+      brandName: 'Product',
+      brandLogo: 'https://example.com/logo.png',
+      layout: 'split',
+      extras: ['Feature 1', 'Feature 2', 'Feature 3'],
+    });
+    ```
+
+  </Tab>
+</Tabs>
+
+## Examples
+
+<CodeGroup>
+
+```typescript Basic Usage
+import { createRenderer } from "@ogify/core";
+import template from "@ogify/templates/basic";
+import type { TemplateParams } from "@ogify/templates/basic";
+
+const renderer = createRenderer<{ basic: TemplateParams }>({
+  templates: { basic: template },
+});
+
+const buffer = await renderer.renderToImage("basic", {
+  title: "Hello World",
+  subtitle: "My first OG image",
+  layout: "centered",
+});
+```
+
+```typescript With Branding
+const buffer = await renderer.renderToImage("basic", {
+  title: "Product Launch 2026",
+  subtitle: "Introducing our latest innovation",
+  brandName: "Acme Corp",
+  brandLogo: "https://acme.com/logo.png",
+  layout: "aligned",
+  primaryColor: "#0066cc",
+  secondaryColor: "#e6f2ff",
+  extras: ["Tech", "Innovation"],
+});
+```
+
+```typescript With CTA
+const buffer = await renderer.renderToImage("basic", {
+  title: "Join Our Community",
+  subtitle: "Connect with thousands of developers",
+  cta: "Sign Up Now",
+  layout: "centered",
+  primaryColor: "#8b5cf6",
+  textColor: "#ffffff",
+});
+```
+
+```typescript RTL Support
+const buffer = await renderer.renderToImage(
+  "basic",
+  {
+    title: "مرحبا بالعالم",
+    subtitle: "هذه أول صورة OG لي",
+    brandName: "شركة",
+    layout: "aligned",
+  },
+  {
+    isRTL: true,
+  }
+);
+```
+
+```typescript Custom Colors & Pattern
+const buffer = await renderer.renderToImage("basic", {
+  title: "Custom Design",
+  subtitle: "Fully customizable appearance",
+  layout: "split",
+  primaryColor: "#ff6b6b",
+  secondaryColor: "#4ecdc4",
+  textColor: "#ffffff",
+  pattern: "https://example.com/custom-pattern.png",
+});
+```
+
+</CodeGroup>
+
+## Fonts
+
+The basic template uses **JetBrains Mono** font in two weights:
+
+- Regular (400)
+- Bold (700)
+
+## Features
+
+<AccordionGroup>
+  <Accordion icon="language" title="RTL Support">
+    Fully supports right-to-left languages. Pass `isRTL: true` in the options to enable RTL layout.
+  </Accordion>
+
+{" "}
+
+<Accordion icon="palette" title="Customizable Colors">
+  Control primary color, secondary color, and text color to match your brand.
+</Accordion>
+
+{" "}
+
+<Accordion icon="table-layout" title="Three Layouts">
+  Choose from aligned, centered, or split layouts depending on your content
+  needs.
+</Accordion>
+
+{" "}
+
+<Accordion icon="image" title="Background Patterns">
+  Add visual interest with customizable background patterns.
+</Accordion>
+
+  <Accordion icon="arrow-pointer" title="Call-to-Action">
+    Include a prominent CTA button with automatic arrow icons that flip for RTL.
+  </Accordion>
+</AccordionGroup>
+
+## Tips
+
+<Tip>
+  Use the `extras` array to display metadata like reading time, date, category,
+  or author information.
+</Tip>
+
+<Tip>
+  The template automatically adjusts text size based on whether a subtitle is
+  present - titles are larger when there's no subtitle.
+</Tip>
+
+<Tip>
+  Background gradients are created using radial gradients from the corners,
+  creating a modern, dynamic look.
+</Tip>
