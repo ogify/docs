@@ -15,13 +15,35 @@ const imageBuffer = await renderer.renderToImage(
   {
     title: "مرحبا بالعالم", // Arabic: Hello World
     subtitle: "هذه أول صورة OG لي",
-    layout: "aligned",
+    layout: "split",
+    cta: "اقرأ المزيد",
+    extras: ["مرحبا بالعالم", "مرحبا بالعالم"],
+    brandName: "علامتي التجارية",
   },
   {
     isRTL: true,
+    fonts: [
+      {
+        name: "Rubik",
+        weight: 400,
+      },
+      {
+        name: "Rubik",
+        weight: 700,
+      },
+    ],
   }
 );
 ```
+
+<Note>
+  To display the text correctly, you must use a font that supports the specific
+  language characters. We recommend checking [Google
+  Fonts](https://fonts.google.com/?lang=ar_Arab) for a wide selection of
+  compatible fonts.
+</Note>
+
+![RTL](/images/rtl-support.png)
 
 ## Template Support
 
