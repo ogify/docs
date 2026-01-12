@@ -1,0 +1,168 @@
+---
+title: "createRenderer"
+---
+
+Factory function to create a new `TemplateRenderer` instance. This is a convenience wrapper around the `TemplateRenderer` constructor that provides a more functional API style.
+
+<Note>
+  For complete type definitions and interfaces, see the [Type
+  Definitions](/api-reference/core/type-definitions) page.
+</Note>
+
+## Function Signature
+
+```typescript
+function createRenderer<
+  TMap extends Record<string, OgTemplateParams> = Record<
+    string,
+    OgTemplateParams
+  >
+>(config: OgTemplateRenderer<TMap>): TemplateRenderer<TMap>;
+```
+
+## Parameters
+
+<ParamField path="config" type="OgTemplateRenderer<TMap>" required>
+  Handler configuration with templates and global settings
+
+  <Expandable title="properties">
+    <ParamField path="templates" type="object" required>
+      A map of template objects, keyed by a unique string ID
+    </ParamField>
+
+    <ParamField path="sharedParams" type="object | function">
+      Default parameters that will be applied to all templates. Useful for brand consistency. Can be an object or a function returning a Promise. User-provided parameters take precedence over shared parameters during rendering.
+    </ParamField>
+
+    <ParamField path="cache" type="OgCacheConfig">
+      Caching configuration for fonts and icons. If not provided, defaults to in-memory caching with `{ type: 'memory' }`
+
+      <Expandable title="properties">
+        <ParamField path="type" type="'memory' | 'filesystem'">
+          Cache type. Defaults to `'memory'` if not specified
+        </ParamField>
+
+        <ParamField path="ttl" type="number">
+          Time to live in milliseconds. Default: No expiration
+        </ParamField>
+
+        <ParamField path="max" type="number">
+          Maximum number of items in cache. Default: 100
+        </ParamField>
+
+        <ParamField path="dir" type="string">
+          Directory for filesystem cache (required if type is `'filesystem'`)
+        </ParamField>
+      </Expandable>
+    </ParamField>
+
+    <ParamField path="beforeRender" type="function">
+      Hook called before rendering
+
+      ```typescript
+      (templateId: string, params: any) => void | Promise<void>
+      ```
+    </ParamField>
+
+    <ParamField path="afterRender" type="function">
+      Hook called after rendering
+
+      ```typescript
+      (templateId: string, params: any, buffer: Buffer) => void | Promise<void>
+      ```
+    </ParamField>
+
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="renderer" type="TemplateRenderer">
+  The renderer instance with methods for managing templates and generating
+  images
+</ResponseField>
+
+## Examples
+
+<CodeGroup>
+
+```typescript Basic Usage
+import { createRenderer } from "@ogify/core";
+import basicTemplate from "@ogify/templates/basic";
+import type { TemplateParams } from "@ogify/templates/basic";
+
+const renderer = createRenderer<{ basic: TemplateParams }>({
+  templates: { basic: basicTemplate },
+  sharedParams: {
+    brandName: "My Company",
+    brandLogo: "https://example.com/logo.png",
+  },
+});
+```
+
+```typescript With Caching
+import { createRenderer } from "@ogify/core";
+import basicTemplate from "@ogify/templates/basic";
+import type { TemplateParams } from "@ogify/templates/basic";
+
+const renderer = createRenderer<{ basic: TemplateParams }>({
+  templates: { basic: basicTemplate },
+  sharedParams: {
+    brandName: "My Company",
+    brandLogo: "https://example.com/logo.png",
+  },
+  cache: {
+    type: "memory",
+    ttl: 3600000, // 1 hour
+    max: 100,
+  },
+});
+```
+
+```typescript With Hooks
+import { createRenderer } from "@ogify/core";
+import basicTemplate from "@ogify/templates/basic";
+import type { TemplateParams } from "@ogify/templates/basic";
+
+const renderer = createRenderer<{ basic: TemplateParams }>({
+  templates: { basic: basicTemplate },
+  sharedParams: {
+    brandName: "My Company",
+    brandLogo: "https://example.com/logo.png",
+  },
+  beforeRender: async (templateId, params) => {
+    console.log(`Rendering template: ${templateId}`);
+  },
+  afterRender: async (templateId, params, buffer) => {
+    console.log(`Generated ${buffer.length} bytes`);
+  },
+});
+```
+
+</CodeGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="TemplateRenderer"
+    icon="gear"
+    href="/api-reference/core/template-renderer"
+  >
+    Learn about the renderer instance methods
+  </Card>
+  <Card
+    title="defineTemplate"
+    icon="paintbrush"
+    href="/api-reference/core/define-template"
+  >
+    Create custom templates
+  </Card>
+  <Card
+    title="Type Definitions"
+    icon="code"
+    href="/api-reference/core/type-definitions"
+  >
+    View all TypeScript types
+  </Card>
+</CardGroup>

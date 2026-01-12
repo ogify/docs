@@ -61,7 +61,12 @@
         "groups": [
           {
             "group": "@ogify/core",
-            "pages": ["api-reference/core"]
+            "pages": [
+              "api-reference/core/create-renderer",
+              "api-reference/core/template-renderer",
+              "api-reference/core/define-template",
+              "api-reference/core/type-definitions"
+            ]
           },
           {
             "group": "@ogify/templates",

@@ -1,0 +1,399 @@
+---
+title: "Type Definitions"
+---
+
+Complete TypeScript type definitions for the `@ogify/core` library. These types provide full type safety when creating templates and configuring renderers.
+
+## Core Types
+
+### OgTemplateParams
+
+Base type for template parameters. All template parameter types should extend this.
+
+```typescript
+type OgTemplateParams = Record<string, string | string[] | number | boolean>;
+```
+
+Parameters are the data that gets injected into templates to create personalized OG images. Values can be:
+
+- **Strings**: Text content (titles, descriptions, names)
+- **String Arrays**: Lists of tags, categories
+- **Numbers**: Counts, dates, metrics
+- **Booleans**: Flags, toggles, states
+
+<CodeGroup>
+
+```typescript Example
+const params: OgTemplateParams = {
+  title: "My Blog Post",
+  author: "John Doe",
+  views: 1234,
+  published: true,
+  tags: ["typescript", "web development"],
+};
+```
+
+</CodeGroup>
+
+---
+
+### OgTemplate
+
+Complete definition of an Open Graph image template. A template is a reusable blueprint for generating OG images.
+
+```typescript
+type OgTemplate<TParams = OgTemplateParams> = {
+  renderer: (props: OgTemplateOptions & { params: TParams }) => string;
+  fonts: OgFontConfig[];
+  emojiProvider?: OgEmojiProvider;
+};
+```
+
+<ParamField path="renderer" type="function" required>
+  Function that generates HTML markup from template parameters. The HTML should
+  use inline styles (Tailwind-like utilities are supported). Flexbox and basic
+  CSS properties are supported by Satori.
+</ParamField>
+
+<ParamField path="fonts" type="OgFontConfig[]" required>
+  Custom fonts to use in this template. Fonts are loaded in the order specified
+  and should cover all characters used in the template.
+</ParamField>
+
+<ParamField path="emojiProvider" type="OgEmojiProvider">
+  Optional emoji provider to use in this template. If not specified, defaults to
+  `'noto'`.
+</ParamField>
+
+---
+
+### OgTemplateRenderer
+
+Configuration for the TemplateRenderer class. Defines available templates, global defaults, and lifecycle hooks.
+
+```typescript
+type OgTemplateRenderer<
+  TMap extends Record<string, OgTemplateParams> = Record<
+    string,
+    OgTemplateParams
+  >
+> = {
+  templates: { [K in keyof TMap]: OgTemplate<TMap[K]> };
+  sharedParams?:
+    | Partial<TMap[keyof TMap]>
+    | (() => Promise<Partial<TMap[keyof TMap]>>);
+  cache?: OgCacheConfig;
+  beforeRender?: (
+    templateId: keyof TMap,
+    params: TMap[keyof TMap]
+  ) => void | Promise<void>;
+  afterRender?: (
+    templateId: keyof TMap,
+    params: TMap[keyof TMap],
+    imageBuffer: Buffer
+  ) => void | Promise<void>;
+};
+```
+
+<ParamField path="templates" type="object" required>
+  Map of template definitions to register, keyed by template ID
+</ParamField>
+
+<ParamField path="sharedParams" type="object | function">
+  Shared parameter values applied to all templates. These values are merged with
+  user-provided parameters, with user values taking precedence.
+</ParamField>
+
+<ParamField path="cache" type="OgCacheConfig">
+  Cache configuration for fonts and icons. When provided, enables LRU caching to
+  improve performance by reducing redundant network requests.
+</ParamField>
+
+<ParamField path="beforeRender" type="function">
+  Hook called before rendering. Useful for logging, analytics, parameter
+  validation, authentication checks, and rate limiting.
+</ParamField>
+
+<ParamField path="afterRender" type="function">
+  Hook called after rendering. Useful for caching generated images, cleanup
+  operations, sending notifications, and updating metrics.
+</ParamField>
+
+---
+
+## Font Configuration
+
+### OgFontConfig
+
+Configuration for a font used in OG image templates. Fonts can be loaded from three sources (in priority order):
+
+1. Pre-loaded binary data (via `data` property)
+2. Remote URL (via `url` property)
+3. Google Fonts API (automatic detection based on `name`)
+
+```typescript
+type OgFontConfig = {
+  name: string;
+  weight?: FontWeight;
+  style?: FontStyle;
+  url?: string;
+  data?: Buffer | ArrayBuffer;
+  format?: OgFontFormat;
+};
+```
+
+<ParamField path="name" type="string" required>
+  The font family name (e.g., 'Inter', 'Roboto', 'Merriweather')
+</ParamField>
+
+<ParamField path="weight" type="number" default={400}>
+  Font weight (100-900)
+</ParamField>
+
+<ParamField path="style" type="'normal' | 'italic'" default="normal">
+  Font style
+</ParamField>
+
+<ParamField path="url" type="string">
+  URL to the font file (for custom/self-hosted fonts)
+</ParamField>
+
+<ParamField path="data" type="Buffer | ArrayBuffer">
+  Pre-loaded font binary data
+</ParamField>
+
+<ParamField path="format" type="'woff' | 'ttf'" default="woff">
+  Font file format
+</ParamField>
+
+<CodeGroup>
+
+```typescript Google Fonts (Automatic)
+const font1: OgFontConfig = {
+  name: "Inter",
+  weight: 400,
+  style: "normal",
+};
+```
+
+```typescript Custom URL
+const font2: OgFontConfig = {
+  name: "CustomFont",
+  url: "https://example.com/font.woff2",
+  weight: 700,
+};
+```
+
+```typescript Pre-loaded Data
+const font3: OgFontConfig = {
+  name: "MyFont",
+  data: fontBuffer,
+  weight: 400,
+};
+```
+
+</CodeGroup>
+
+---
+
+### OgFontFormat
+
+Supported font file formats.
+
+```typescript
+type OgFontFormat = "woff" | "ttf";
+```
+
+- **`woff`**: Web Open Font Format (modern, compressed)
+- **`ttf`**: TrueType Font (legacy, larger file size)
+
+---
+
+## Template Options
+
+### OgTemplateOptions
+
+Props passed to template HTML rendering functions. Contains user-provided parameters and optional dimension overrides.
+
+```typescript
+type OgTemplateOptions = {
+  fonts?: OgFontConfig[];
+  emojiProvider?: OgEmojiProvider;
+  width?: number;
+  height?: number;
+  isRTL?: boolean;
+};
+```
+
+<ParamField path="fonts" type="OgFontConfig[]">
+  Custom fonts to use in this template
+</ParamField>
+
+<ParamField path="emojiProvider" type="OgEmojiProvider">
+  Optional emoji provider to use in this template
+</ParamField>
+
+<ParamField path="width" type="number" default={1200}>
+  Optional custom width in pixels
+</ParamField>
+
+<ParamField path="height" type="number" default={630}>
+  Optional custom height in pixels
+</ParamField>
+
+<ParamField path="isRTL" type="boolean" default={false}>
+  Enable Right-to-Left text direction
+</ParamField>
+
+<CodeGroup>
+
+```typescript Example Usage
+const html = (props: OgTemplateOptions) => `
+  <div style="width: ${props.width}px; height: ${props.height}px">
+    <h1>${props.params.title}</h1>
+    <p>${props.params.description}</p>
+  </div>
+`;
+```
+
+</CodeGroup>
+
+---
+
+## Emoji Providers
+
+### OgEmojiProvider
+
+Supported emoji providers for rendering emoji characters in OG images. Each provider offers a different visual style.
+
+```typescript
+type OgEmojiProvider =
+  | "twemoji"
+  | "fluent"
+  | "fluentFlat"
+  | "noto"
+  | "blobmoji"
+  | "openmoji";
+```
+
+<AccordionGroup>
+  <Accordion icon="twitter" title="twemoji">
+    Twitter's emoji set - colorful, rounded style
+  </Accordion>
+  <Accordion icon="microsoft" title="fluent">
+    Microsoft's Fluent emoji - 3D style with color
+  </Accordion>
+  <Accordion icon="microsoft" title="fluentFlat">
+    Microsoft's Fluent emoji - flat 2D style
+  </Accordion>
+  <Accordion icon="google" title="noto">
+    Google's Noto Color Emoji - current standard (default)
+  </Accordion>
+  <Accordion icon="google" title="blobmoji">
+    Google's blob-style emoji - deprecated but still available
+  </Accordion>
+  <Accordion icon="palette" title="openmoji">
+    Open-source emoji with outlined style
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Caching
+
+### OgCacheConfig
+
+Cache configuration for fonts and icons. Supports two caching strategies: memory and filesystem.
+
+```typescript
+type OgCacheConfig =
+  | {
+      type: "memory";
+      ttl?: number;
+      max?: number;
+    }
+  | {
+      type: "filesystem";
+      dir?: string;
+      ttl?: number;
+      max?: number;
+    };
+```
+
+<Tabs>
+  <Tab title="Memory Cache">
+    Fast in-memory cache with LRU eviction
+    
+    <ParamField path="type" type="'memory'" required>
+      Memory-based caching strategy
+    </ParamField>
+    
+    <ParamField path="ttl" type="number" default={3600000}>
+      Time-to-live in milliseconds (default: 1 hour)
+    </ParamField>
+    
+    <ParamField path="max" type="number" default={100}>
+      Maximum number of items to cache
+    </ParamField>
+
+    ```typescript
+    const cache: OgCacheConfig = {
+      type: 'memory',
+      ttl: 3600000, // 1 hour
+      max: 100
+    };
+    ```
+
+  </Tab>
+  
+  <Tab title="Filesystem Cache">
+    Persistent cache stored on disk
+    
+    <ParamField path="type" type="'filesystem'" required>
+      Filesystem-based caching strategy
+    </ParamField>
+    
+    <ParamField path="dir" type="string" default=".ogify-cache">
+      Directory to store cache files
+    </ParamField>
+    
+    <ParamField path="ttl" type="number" default={3600000}>
+      Time-to-live in milliseconds (default: 1 hour)
+    </ParamField>
+    
+    <ParamField path="max" type="number" default={100}>
+      Maximum number of items to cache
+    </ParamField>
+
+    ```typescript
+    const cache: OgCacheConfig = {
+      type: 'filesystem',
+      dir: '.cache/ogify',
+      ttl: 7200000, // 2 hours
+      max: 200
+    };
+    ```
+
+  </Tab>
+</Tabs>
+
+---
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="createRenderer"
+    icon="wand-magic-sparkles"
+    href="/api-reference/core/create-renderer"
+  >
+    Use these types with createRenderer
+  </Card>
+  <Card
+    title="defineTemplate"
+    icon="paintbrush"
+    href="/api-reference/core/define-template"
+  >
+    Create type-safe templates
+  </Card>
+</CardGroup>

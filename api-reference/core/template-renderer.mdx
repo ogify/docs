@@ -1,0 +1,210 @@
+---
+title: "TemplateRenderer"
+---
+
+The main class for managing templates and rendering images. Typically created via `createRenderer()`, but can be instantiated directly if needed.
+
+<Note>
+  For complete type definitions and interfaces, see the [Type
+  Definitions](/api-reference/core/type-definitions) page.
+</Note>
+
+## Methods
+
+### getTemplate
+
+Retrieves a template by its unique ID.
+
+```typescript
+getTemplate(id: string): OgTemplate | undefined
+```
+
+#### Parameters
+
+<ParamField path="id" type="string" required>
+  The template ID to look up
+</ParamField>
+
+#### Returns
+
+<ResponseField name="template" type="OgTemplate | undefined">
+  The template definition, or `undefined` if not found
+</ResponseField>
+
+---
+
+### renderToImage
+
+Renders a template to a PNG image buffer. This is the main method for generating OG images.
+
+```typescript
+renderToImage<K extends keyof TMap>(
+  templateId: K,
+  params: TMap[K] | (() => Promise<TMap[K]>),
+  options?: OgTemplateOptions
+): Promise<Buffer>
+```
+
+#### Parameters
+
+<ParamField path="templateId" type="string" required>
+  The ID of the template to render
+</ParamField>
+
+<ParamField path="params" type="object | function" required>
+  Parameters specific to the chosen template, or a function returning a Promise
+  of parameters. User-provided parameters override shared parameters.
+</ParamField>
+
+<ParamField path="options" type="OgTemplateOptions">
+  Rendering options
+  
+  <Expandable title="properties">
+    <ParamField path="width" type="number" default={1200}>
+      Width of the image in pixels
+    </ParamField>
+
+    <ParamField path="height" type="number" default={630}>
+      Height of the image in pixels
+    </ParamField>
+
+    <ParamField path="isRTL" type="boolean" default={false}>
+      Whether to enable Right-to-Left support
+    </ParamField>
+
+    <ParamField path="fonts" type="OgFontConfig[]">
+      Custom fonts override
+    </ParamField>
+
+  </Expandable>
+</ParamField>
+
+#### Returns
+
+<ResponseField name="buffer" type="Promise<Buffer>">
+  A promise that resolves to the PNG image buffer
+</ResponseField>
+
+#### Rendering process
+
+<Steps>
+  <Step title="Template Lookup">
+    Looks up the template by ID in the internal registry
+  </Step>
+  <Step title="Parameter Merging">
+    Merges shared params with user params
+
+    **Priority:** Parameters are merged with the following precedence
+    (highest to lowest):
+    1. `params` passed to `renderToImage()`
+    2. `sharedParams` from renderer configuration
+    3. Template default parameters
+
+  </Step>
+  <Step title="Cache Checking">
+    Generates a cache key and checks for cached result
+  </Step>
+  <Step title="Before Render Hook">
+    Calls `beforeRender` hook if configured
+  </Step>
+  <Step title="Core Rendering">Delegates to the core rendering engine</Step>
+  <Step title="Cache Storage">Caches the generated image</Step>
+  <Step title="After Render Hook">Calls `afterRender` hook if configured</Step>
+  <Step title="Return Buffer">Returns the PNG buffer</Step>
+</Steps>
+
+#### Examples
+
+<CodeGroup>
+
+```typescript Static Parameters
+const buffer = await renderer.renderToImage("basic", {
+  title: "Hello World",
+  layout: "centered",
+});
+```
+
+```typescript Async Parameters
+const buffer = await renderer.renderToImage("basic", async () => {
+  const data = await fetchBlogPost();
+  return {
+    title: data.title,
+    subtitle: data.excerpt,
+  };
+});
+```
+
+```typescript RTL Support
+const buffer = await renderer.renderToImage(
+  "basic",
+  {
+    title: "مرحبا بالعالم",
+  },
+  {
+    isRTL: true,
+  }
+);
+```
+
+```typescript Custom Dimensions
+const buffer = await renderer.renderToImage(
+  "basic",
+  {
+    title: "Custom Size",
+  },
+  {
+    width: 1600,
+    height: 900,
+  }
+);
+```
+
+</CodeGroup>
+
+## Usage Example
+
+```typescript
+import { createRenderer } from "@ogify/core";
+import basicTemplate from "@ogify/templates/basic";
+import type { TemplateParams } from "@ogify/templates/basic";
+
+const renderer = createRenderer<{ basic: TemplateParams }>({
+  templates: { basic: basicTemplate },
+});
+
+// Get template info
+const template = renderer.getTemplate("basic");
+console.log(template?.fonts);
+
+// Render image
+const buffer = await renderer.renderToImage("basic", {
+  title: "My Page",
+  subtitle: "A great description",
+  layout: "centered",
+});
+
+// Save or return the buffer
+await writeFile("og-image.png", buffer);
+```
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="createRenderer"
+    icon="wand-magic-sparkles"
+    href="/api-reference/core/create-renderer"
+  >
+    Create a renderer instance
+  </Card>
+  <Card title="Templates" icon="images" href="/api-reference/templates">
+    Explore available templates
+  </Card>
+  <Card
+    title="Type Definitions"
+    icon="code"
+    href="/api-reference/core/type-definitions"
+  >
+    View all TypeScript types
+  </Card>
+</CardGroup>

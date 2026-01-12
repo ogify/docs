@@ -1,0 +1,164 @@
+---
+title: "defineTemplate"
+---
+
+Helper function to define a template with type safety. Use this when creating custom templates for your Open Graph images.
+
+<Note>
+  For complete type definitions and interfaces, see the [Type
+  Definitions](/api-reference/core/type-definitions) page.
+</Note>
+
+## Function Signature
+
+```typescript
+function defineTemplate<T extends OgTemplateParams>(
+  config: TemplateConfig<T>
+): OgTemplate<T>;
+```
+
+## Parameters
+
+<ParamField path="config" type="object" required>
+  Template configuration
+  
+  <Expandable title="properties">
+    <ParamField path="renderer" type="function" required>
+      Function that returns an HTML string. Receives `{ params, isRTL }`
+      
+      ```typescript
+      (context: { params: T; isRTL: boolean }) => string
+      ```
+    </ParamField>
+
+    <ParamField path="fonts" type="OgFontConfig[]" required>
+      Array of font definitions required by the template
+    </ParamField>
+
+    <ParamField path="emojiProvider" type="string" default="twemoji">
+      Emoji provider to use. Options: `'twemoji'`, `'fluent'`, `'fluentFlat'`, `'noto'`, `'blobmoji'`, `'openmoji'`
+    </ParamField>
+
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="template" type="OgTemplate<T>">
+  The defined template object that can be used with `createRenderer`
+</ResponseField>
+
+## Example
+
+<CodeGroup>
+
+```typescript Basic Template
+import { defineTemplate } from "@ogify/core";
+
+export type MyTemplateParams = {
+  title: string;
+  description: string;
+};
+
+const myTemplate = defineTemplate<MyTemplateParams>({
+  fonts: [
+    { name: "Inter", weight: 400 },
+    { name: "Inter", weight: 700 },
+  ],
+  emojiProvider: "twemoji",
+  renderer: ({ params, isRTL }) => {
+    return `
+      <div style="display: flex; width: 100%; height: 100%; direction: ${
+        isRTL ? "rtl" : "ltr"
+      };">
+        <h1>${params.title}</h1>
+        <p>${params.description}</p>
+      </div>
+    `;
+  },
+});
+
+export default myTemplate;
+```
+
+```typescript Advanced Template
+import { defineTemplate } from "@ogify/core";
+import { objectToStyle } from "@ogify/core/utils";
+
+export type AdvancedTemplateParams = {
+  title: string;
+  subtitle?: string;
+  backgroundColor: string;
+  textColor: string;
+};
+
+const advancedTemplate = defineTemplate<AdvancedTemplateParams>({
+  fonts: [
+    { name: "Roboto", weight: 400 },
+    { name: "Roboto", weight: 700 },
+  ],
+  emojiProvider: "fluent",
+  renderer: ({ params, isRTL }) => {
+    const containerStyle = objectToStyle(
+      {
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        backgroundColor: params.backgroundColor,
+        color: params.textColor,
+        padding: "60px",
+        direction: isRTL ? "rtl" : "ltr",
+      },
+      isRTL
+    );
+
+    return `
+      <div style="${containerStyle}">
+        <h1 style="font-size: 72px; font-weight: 700; margin: 0;">
+          ${params.title}
+        </h1>
+        ${
+          params.subtitle
+            ? `
+          <p style="font-size: 36px; margin-top: 20px;">
+            ${params.subtitle}
+          </p>
+        `
+            : ""
+        }
+      </div>
+    `;
+  },
+});
+
+export default advancedTemplate;
+```
+
+</CodeGroup>
+
+## Related
+
+<CardGroup cols={2}>
+  <Card
+    title="createRenderer"
+    icon="wand-magic-sparkles"
+    href="/api-reference/core/create-renderer"
+  >
+    Use your template with a renderer
+  </Card>
+  <Card
+    title="Basic Template"
+    icon="images"
+    href="/api-reference/templates/basic"
+  >
+    See a complete template example
+  </Card>
+  <Card
+    title="Type Definitions"
+    icon="code"
+    href="/api-reference/core/type-definitions"
+  >
+    View all TypeScript types
+  </Card>
+</CardGroup>
