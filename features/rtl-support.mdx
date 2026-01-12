@@ -1,0 +1,45 @@
+---
+title: "RTL Support"
+description: "Right-to-left language support for Arabic, Hebrew, and Persian"
+---
+
+OGify has built-in support for Right-to-Left (RTL) languages like Arabic, Hebrew, and Persian.
+
+## Enabling RTL
+
+To enable RTL support, simply pass `isRTL: true` in the options object when calling `renderToImage`.
+
+```typescript
+const imageBuffer = await renderer.renderToImage(
+  "basic",
+  {
+    title: "مرحبا بالعالم", // Arabic: Hello World
+    subtitle: "هذه أول صورة OG لي",
+    layout: "aligned",
+  },
+  {
+    isRTL: true,
+  }
+);
+```
+
+## Template Support
+
+All built-in templates (like `basic`) fully support RTL. If you are creating a custom template, you can access the `isRTL` boolean in your renderer function to conditionally apply styles.
+
+```typescript
+renderer: ({ params, isRTL }) => {
+  return `
+    <div style="direction: ${isRTL ? "rtl" : "ltr"}; text-align: ${
+    isRTL ? "right" : "left"
+  }">
+      ${params.title}
+    </div>
+  `;
+};
+```
+
+<Tip>
+  Always test your templates with RTL content to ensure proper layout and text
+  alignment.
+</Tip>

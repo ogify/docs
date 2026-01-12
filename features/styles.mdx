@@ -1,0 +1,96 @@
+---
+title: "Styles"
+description: "Supported CSS properties and Tailwind-like utilities"
+---
+
+When designing templates, it's important to understand what CSS features are available. OGify relies on **Satori** to convert HTML/CSS into SVG, which is then rendered to PNG.
+
+## Supported CSS Properties
+
+Satori supports a robust subset of CSS. Key properties include:
+
+<AccordionGroup>
+  <Accordion icon="table-layout" title="Layout">
+    - `display: flex` (Default for most elements)
+    - `flex-direction`
+    - `justify-content`
+    - `align-items`
+    - `align-content`
+    - `flex-wrap`
+    - `flex` (shorthand and individual grow/shrink/basis)
+    - `position` (`relative`, `absolute`)
+    - `top`, `right`, `bottom`, `left`
+  </Accordion>
+
+{" "}
+
+<Accordion icon="font" title="Typography">
+  - `font-family` - `font-size` - `font-weight` - `font-style` - `text-align` -
+  `color` - `line-height` - `letter-spacing` - `text-overflow` (`clip`,
+  `ellipsis`) - `overflow` (`hidden`, `visible`) - `white-space` (`normal`,
+  `nowrap`, `pre-wrap`)
+</Accordion>
+
+{" "}
+
+<Accordion icon="palette" title="Visuals">
+  - `background-color` - `background-image` (linear-gradient, radial-gradient,
+  url) - `background-size`, `background-position`, `background-repeat` -
+  `border` (and individual sides) - `border-radius` - `box-shadow` - `opacity` -
+  `transform`
+</Accordion>
+
+  <Accordion icon="ruler" title="Sizing & Spacing">
+    - `width`, `height`
+    - `min-width`, `min-height`, `max-width`, `max-height`
+    - `padding` (and individual sides)
+    - `margin` (and individual sides)
+    - `gap`
+  </Accordion>
+</AccordionGroup>
+
+## Tailwind-like Utilities
+
+OGify includes a utility class processor (similar to `clsx` + a mini-Tailwind engine) that maps class names to styles.
+
+### Common Mappings
+
+<Tabs>
+  <Tab title="Layout">
+    - `flex`, `flex-row`, `flex-col`
+    - `items-center`, `items-start`, `items-end`, `items-stretch`
+    - `justify-center`, `justify-start`, `justify-between`, `justify-around`
+    - `absolute`, `relative`, `inset-0`
+  </Tab>
+
+{" "}
+
+<Tab title="Sizing">
+  - `w-full`, `h-full`, `w-1/2`, `h-screen` - `p-4` (padding), `px-4`, `py-4` -
+  `m-4` (margin), `mx-4`, `my-4`
+</Tab>
+
+{" "}
+
+<Tab title="Typography">
+  - `text-center`, `text-left`, `text-right` - `text-xl`, `text-[64px]` -
+  `font-bold`, `italic` - `text-black`, `text-white`
+</Tab>
+
+  <Tab title="Visuals">
+    - `bg-white`, `bg-[#ff0000]`
+    - `rounded`, `rounded-full`, `rounded-xl`
+    - `border`, `border-2`, `border-white`
+  </Tab>
+</Tabs>
+
+## Limitations
+
+<Warning>
+  **Important Constraints** - **No CSS Grid**: Satori does not support CSS Grid
+  layouts. Use Flexbox instead. - **No `z-index`**: Stacking order depends on
+  DOM order. - **Limited Selectors**: Pseudo-classes like `:hover` make no sense
+  for static images.
+</Warning>
+
+For a complete list of Satori's supported CSS, refer to the [Satori Documentation](https://github.com/vercel/satori#css).

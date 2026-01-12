@@ -1,0 +1,81 @@
+---
+title: "Caching"
+description: "A smart caching layer to improve performance"
+---
+
+OGify includes a built-in caching system to improve performance by reducing redundant network requests for fonts and emojis. You can configure caching when creating a renderer.
+
+## Configuration
+
+<Tabs>
+  <Tab title="Memory Cache">
+    Fast in-memory cache with LRU eviction (default)
+    
+    ```typescript
+    import { createRenderer } from '@ogify/core';
+
+    const renderer = createRenderer({
+      templates: { /* ... */ },
+      cache: {
+        type: 'memory',
+        ttl: 3600000, // 1 hour (optional)
+        max: 100      // Max items (optional)
+      }
+    });
+    ```
+
+  </Tab>
+  
+  <Tab title="Filesystem Cache">
+    Persistent cache stored on disk
+    
+    ```typescript
+    import { createRenderer } from '@ogify/core';
+
+    const renderer = createRenderer({
+      templates: { /* ... */ },
+      cache: {
+        type: 'filesystem',
+        dir: '.cache/ogify',  // Cache directory
+        ttl: 3600000,         // 1 hour (optional)
+        max: 100              // Max items (optional)
+      }
+    });
+    ```
+
+  </Tab>
+</Tabs>
+
+## What is Cached?
+
+<AccordionGroup>
+  <Accordion icon="font" title="Remote Fonts">
+    Fonts downloaded from Google Fonts or other URLs are cached to avoid
+    repeated network requests.
+  </Accordion>
+
+{" "}
+
+<Accordion icon="face-smile" title="Emoji Assets">
+  Emoji images from providers like Twemoji, Fluent, etc. are cached for faster
+  rendering.
+</Accordion>
+
+  <Accordion icon="image" title="Generated Images">
+    (Optional) Depending on implementation, images with identical parameters may
+    be served from cache.
+  </Accordion>
+</AccordionGroup>
+
+## Disabling Cache
+
+<Warning>Not recommended for production environments</Warning>
+
+To disable caching completely:
+
+```typescript
+const renderer = createRenderer({
+  // ...
+  cache: false,
+});
+```

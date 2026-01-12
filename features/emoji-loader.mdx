@@ -1,0 +1,63 @@
+---
+title: "Emoji Loader"
+description: "Rendering emojis in your Open Graph images"
+---
+
+OGify supports rendering emojis in your images by downloading vector or image assets from open-source emoji providers.
+
+## Configuration
+
+You can specify the `emojiProvider` when defining a template. It is set per template during template definition.
+
+```typescript
+import { defineTemplate } from "@ogify/core";
+
+const template = defineTemplate({
+  fonts: [{ name: "Inter", weight: 400 }],
+  emojiProvider: "twemoji", // Default
+  renderer: ({ params }) => {
+    return `<div>${params.title}</div>`;
+  },
+});
+```
+
+## Supported Providers
+
+<CardGroup cols={2}>
+  <Card title="Twemoji" icon="twitter">
+    Twitter Emojis (Default) - Colorful, rounded style
+  </Card>
+  <Card title="Fluent" icon="microsoft">
+    Microsoft Fluent Emojis - 3D style with color
+  </Card>
+  <Card title="Fluent Flat" icon="microsoft">
+    Microsoft Fluent Emojis - Flat 2D variant
+  </Card>
+  <Card title="Noto" icon="google">
+    Google Noto Emojis - Current standard
+  </Card>
+  <Card title="Blobmoji" icon="google">
+    Blobmojis - Google's blob-style emoji
+  </Card>
+  <Card title="OpenMoji" icon="palette">
+    OpenMoji - Open-source with outlined style
+  </Card>
+</CardGroup>
+
+## Usage
+
+Simply include the emoji character in your string content. The renderer will automatically detect it and replace it with the corresponding image asset during generation.
+
+```typescript
+renderer: ({ params }) => `
+  <div>
+    <h1>${params.title}</h1> <!-- If title contains "👋", it will be rendered -->
+    <p>🎉 🚀 ✨</p>
+  </div>
+`;
+```
+
+<Tip>
+  Emoji assets are cached automatically by the renderer's cache system to ensure
+  subsequent uses are fast.
+</Tip>
