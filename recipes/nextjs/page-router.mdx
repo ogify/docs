@@ -1,0 +1,80 @@
+---
+title: "Pages Router"
+description: "Generate OG images using API Routes in Next.js Pages Router"
+---
+
+<Warning>
+**Important:** Add OGify packages to `serverExternalPackages` in your `next.config.js`:
+
+```javascript
+const nextConfig = {
+  ...
+  experimental: {
+    serverExternalPackages: ["@ogify/core", "@ogify/templates"],
+  },
+  ...
+};
+
+module.exports = nextConfig;
+```
+
+This prevents Next.js from bundling OGify packages, which is necessary for proper font loading and image generation.
+
+</Warning>
+
+For Next.js projects using the Pages Router, generate OG images using **API Routes**.
+
+## Using API Routes
+
+<Steps>
+  <Step title="Create the API Route">
+    Create a file at `pages/api/og.ts`:
+
+    ```typescript
+    import { createRenderer } from '@ogify/core';
+    import template from '@ogify/templates/basic';
+    import type { TemplateParams } from '@ogify/templates/basic';
+    import type { NextApiRequest, NextApiResponse } from 'next';
+
+    const renderer = createRenderer<{ basic: TemplateParams }>({
+      templates: { basic: template },
+    });
+
+    export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+      const { title } = req.query;
+
+      const imageBuffer = await renderer.renderToImage('basic', {
+        title: (title as string) || 'Hello World',
+        layout: 'centered',
+      });
+
+      res.setHeader('Content-Type', 'image/png');
+      res.send(imageBuffer);
+    }
+    ```
+
+  </Step>
+
+  <Step title="Use in Pages">
+    In your pages, point the `og:image` meta tag to your API route.
+
+    ```tsx
+    import Head from 'next/head';
+
+    export default function Page() {
+      return (
+        <>
+          <Head>
+            <title>My Page</title>
+            <meta property="og:image" content="/api/og?title=My Page" />
+            <meta name="twitter:image" content="/api/og?title=My Page" />
+            <meta name="twitter:card" content="summary_large_image" />
+          </Head>
+          <h1>My Page</h1>
+        </>
+      );
+    }
+    ```
+
+  </Step>
+</Steps>
