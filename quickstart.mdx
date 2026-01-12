@@ -8,13 +8,16 @@ description: "Start generating your first Open Graph image in minutes"
 Choose your package manager and run the following command:
 
 <CodeGroup>
-  ```bash npm
-  npm install @ogify/core @ogify/templates
-  ```
-  
+
+```bash npm
+npm install @ogify/core @ogify/templates
+```
+
+
 ```bash pnpm
 pnpm add @ogify/core @ogify/templates
 ```
+
 
 ```bash yarn
 yarn add @ogify/core @ogify/templates
@@ -34,24 +37,22 @@ This guide will walk you through generating your first Open Graph image using OG
     import template from '@ogify/templates/basic';
     import type { TemplateParams } from '@ogify/templates/basic';
     ```
-
   </Step>
   <Step title="Create a Renderer">
     The renderer is responsible for orchestrating the generation process. Create it by passing your templates to `createRenderer`.
 
     ```typescript
     import { createRenderer } from '@ogify/core';
-
+    
     const renderer = createRenderer<{ basic: TemplateParams }>({
       templates: { basic: template },
       // Optional: Shared parameters across all templates
       sharedParams: {
         brandName: 'My Brand',
-        brandLogo: 'https://ogify.dev/logo.svg',
+        brandLogo: 'https://ogify.dev/white-logo.svg',
       }
     });
     ```
-
   </Step>
   <Step title="Generate an Image">
     Now you can generate an image by calling `renderToImage`. This returns a PNG buffer that you can serve in your response or save to disk.
@@ -63,22 +64,22 @@ This guide will walk you through generating your first Open Graph image using OG
       layout: 'aligned',
       cta: 'Read More',
       primaryColor: '#000000',
+      extras: ['#zero-config', '#production-ready'],
     });
     ```
-
   </Step>
   <Step title="Saving or Returning the Image">
     You can save the image to a file or return it as a response.
 
     <AccordionGroup>
-      <Accordion icon="file-arrow-down" title="Saving to a File">
+      <Accordion title="Saving to a File" icon="file-arrow-down">
         ```typescript
         import { writeFile } from 'node:fs/promises';
-
+        
         await writeFile('output.png', imageBuffer);
         ```
       </Accordion>
-      <Accordion icon="reply" title="Returning as a Response">
+      <Accordion title="Returning as a Response" icon="reply">
         ```typescript
         return new Response(imageBuffer, {
           headers: {
@@ -88,6 +89,5 @@ This guide will walk you through generating your first Open Graph image using OG
         ```
       </Accordion>
     </AccordionGroup>
-
   </Step>
 </Steps>
