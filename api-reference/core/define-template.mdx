@@ -82,8 +82,7 @@ export default myTemplate;
 ```
 
 ```typescript Advanced Template
-import { defineTemplate } from "@ogify/core";
-import { objectToStyle } from "@ogify/core/utils";
+import { defineTemplate, objectToStyle } from "@ogify/core";
 
 export type AdvancedTemplateParams = {
   title: string;
@@ -108,7 +107,6 @@ const advancedTemplate = defineTemplate<AdvancedTemplateParams>({
         backgroundColor: params.backgroundColor,
         color: params.textColor,
         padding: "60px",
-        direction: isRTL ? "rtl" : "ltr",
       },
       isRTL
     );
@@ -136,29 +134,3 @@ export default advancedTemplate;
 ```
 
 </CodeGroup>
-
-## Related
-
-<CardGroup cols={2}>
-  <Card
-    title="createRenderer"
-    icon="wand-magic-sparkles"
-    href="/api-reference/core/create-renderer"
-  >
-    Use your template with a renderer
-  </Card>
-  <Card
-    title="Basic Template"
-    icon="images"
-    href="/api-reference/templates/basic"
-  >
-    See a complete template example
-  </Card>
-  <Card
-    title="Type Definitions"
-    icon="code"
-    href="/api-reference/core/type-definitions"
-  >
-    View all TypeScript types
-  </Card>
-</CardGroup>
