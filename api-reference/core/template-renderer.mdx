@@ -61,7 +61,8 @@ renderToImage<K extends keyof TMap>(
   
   <Expandable title="properties">
     <ParamField path="width" type="number" default={1200}>
-      Width of the image in pixels
+      Width of the image in pixels. Templates always receive the original
+      `width`/`height` — `scale` is applied during rasterisation.
     </ParamField>
 
     <ParamField path="height" type="number" default={630}>
@@ -74,6 +75,13 @@ renderToImage<K extends keyof TMap>(
 
     <ParamField path="fonts" type="OgFontConfig[]">
       Custom fonts override
+    </ParamField>
+
+    <ParamField path="scale" type="number" default={1}>
+      Supersampling scale factor for higher-quality PNG output. Satori renders
+      the SVG at the original `width × height`; Resvg rasterises it at
+      `width × scale` pixels wide. Clamped to `[1, 4]`. Float values are
+      supported (`1.5`, `2`, etc.).
     </ParamField>
 
   </Expandable>
@@ -156,6 +164,26 @@ const buffer = await renderer.renderToImage(
     width: 1600,
     height: 900,
   }
+);
+```
+
+```typescript High-Quality @2x (scale)
+// Renders at 1200×630 layout, rasterised at 2400×1260 PNG
+const buffer = await renderer.renderToImage(
+  "basic",
+  {
+    title: "Sharp Retina Image",
+  },
+  {
+    scale: 2, // @2x — recommended for retina displays
+  }
+);
+
+// Fine-grained float values also work
+const buffer2 = await renderer.renderToImage(
+  "basic",
+  { title: "Quality Boost" },
+  { scale: 1.5 }
 );
 ```
 

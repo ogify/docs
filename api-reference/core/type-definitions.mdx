@@ -43,16 +43,31 @@ Complete definition of an Open Graph image template. A template is a reusable bl
 
 ```typescript
 type OgTemplate<TParams = OgTemplateParams> = {
-  renderer: (props: OgTemplateOptions & { params: TParams }) => string;
+  renderer: (
+    props: OgTemplateOptions & { params: TParams }
+  ) => string | ReactNode | Promise<string | ReactNode>;
   fonts: OgFontConfig[];
   emojiProvider?: OgEmojiProvider;
 };
 ```
 
 <ParamField path="renderer" type="function" required>
-  Function that generates HTML markup from template parameters. The HTML should
-  use inline styles (Tailwind-like utilities are supported). Flexbox and basic
-  CSS properties are supported by Satori.
+  Function that generates the template output from template parameters. Can
+  return:
+  - **`string`** — an HTML string, parsed with `satori-html` before being passed to Satori.
+  - **`ReactNode`** — a JSX element passed directly to Satori (no HTML parsing step).
+  - **`Promise`** of either — async renderers are fully supported.
+
+  <Warning>
+    Returning `null` or `undefined` at the root will throw a clear error instead
+    of silently failing later in the Satori pipeline.
+  </Warning>
+
+  <Note>
+    Satori does not support `dangerouslySetInnerHTML`. For inline HTML inside
+    JSX templates, return a full HTML string from `renderer` instead, or build
+    the element tree using Satori-compatible elements.
+  </Note>
 </ParamField>
 
 <ParamField path="fonts" type="OgFontConfig[]" required>
@@ -222,6 +237,7 @@ type OgTemplateOptions = {
   width?: number;
   height?: number;
   isRTL?: boolean;
+  scale?: number;
 };
 ```
 
@@ -234,7 +250,8 @@ type OgTemplateOptions = {
 </ParamField>
 
 <ParamField path="width" type="number" default={1200}>
-  Optional custom width in pixels
+  Optional custom width in pixels. Templates always receive the original
+  `width`/`height` values — `scale` is applied at the rasterisation step.
 </ParamField>
 
 <ParamField path="height" type="number" default={630}>
@@ -243,6 +260,27 @@ type OgTemplateOptions = {
 
 <ParamField path="isRTL" type="boolean" default={false}>
   Enable Right-to-Left text direction
+</ParamField>
+
+<ParamField path="scale" type="number" default={1}>
+  Supersampling scale factor for higher-quality PNG output. Satori renders the
+  SVG at the original `width × height`; Resvg then rasterises it at
+  `width × scale` pixels wide.
+
+  | `scale` | Output dimensions | Notes |
+  |---------|------------------|-------|
+  | `1` *(default)* | 1200 × 630 | No change — fully backward compatible |
+  | `1.25` | 1500 × 787 | Mild quality boost |
+  | `1.5` | 1800 × 945 | Good quality / size balance |
+  | `2` | 2400 × 1260 | **Recommended** — @2x retina |
+  | `3` | 3600 × 1890 | @3x ultra |
+  | `4` | 4800 × 2520 | Maximum (clamped) |
+
+  **Constraints:**
+  - Float values are supported (`1.25`, `1.5`, etc.)
+  - Values below `1` are clamped to `1`
+  - Values above `4` are clamped to `4` (prevents OOM)
+  - Output PNG file size increases proportionally to `scale²`
 </ParamField>
 
 <CodeGroup>
