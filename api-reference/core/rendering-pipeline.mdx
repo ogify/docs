@@ -1,0 +1,158 @@
+---
+title: "Rendering Pipeline"
+description: "How OGify converts template markup into PNG images"
+---
+
+OGify's rendering engine (`renderTemplate`) converts template output into a PNG buffer through a five-step pipeline powered by [Satori](https://github.com/vercel/satori) and [Resvg](https://github.com/RazrFalcon/resvg).
+
+## Pipeline Overview
+
+<Steps>
+  <Step title="Font Loading">
+    All fonts from the template (or `options.fonts` override) are loaded in parallel. Sources are resolved in priority order: pre-loaded `data` → remote `url` → Google Fonts API.
+  </Step>
+  <Step title="Markup Generation">
+    The template `renderer` is called with merged parameters and render options. It returns either an **HTML string** or a **React node tree**.
+  </Step>
+  <Step title="Element Tree">
+    - **HTML string** → parsed with [`satori-html`](/api-reference/core/html-string-rendering) (`class` → `tw`)
+    - **React node** → passed directly to Satori (no HTML parsing step)
+  </Step>
+  <Step title="SVG Rendering">
+    Satori renders the element tree to SVG at the **original** `width × height` (default 1200 × 630). Font sizes and layout values stay correct regardless of [`scale`](/api-reference/core/scale-supersampling).
+  </Step>
+  <Step title="PNG Rasterization">
+    Resvg rasterizes the vector SVG at `width × scale` pixels wide (default `scale = 1`). See [Scale & Supersampling](/api-reference/core/scale-supersampling) for details.
+  </Step>
+</Steps>
+
+## Renderer Context
+
+Every `renderer` function receives `OgTemplateOptions` merged with `params`:
+
+```typescript
+type RendererContext<TParams> = OgTemplateOptions & {
+  params: TParams;
+};
+```
+
+<ParamField path="params" type="TParams" required>
+  Merged template parameters (`sharedParams` + user params from `renderToImage`). User values take precedence.
+</ParamField>
+
+<ParamField path="width" type="number" default={1200}>
+  Canvas width in pixels. Always the **original** dimension — not affected by `scale`.
+</ParamField>
+
+<ParamField path="height" type="number" default={630}>
+  Canvas height in pixels. Always the **original** dimension.
+</ParamField>
+
+<ParamField path="fonts" type="OgFontConfig[]">
+  Font override from `renderToImage` options. Falls back to the template's `fonts` array when omitted or empty.
+</ParamField>
+
+<ParamField path="emojiProvider" type="OgEmojiProvider">
+  Emoji provider override. Falls back to the template's `emojiProvider`, then `'noto'`.
+</ParamField>
+
+<ParamField path="isRTL" type="boolean" default={false}>
+  Enable right-to-left text direction and layout mirroring.
+</ParamField>
+
+<ParamField path="scale" type="number" default={1}>
+  Supersampling factor passed through for awareness. **Templates should not use `scale` for layout** — Satori always renders at `width × height`. Only Resvg uses `scale` for final PNG dimensions.
+</ParamField>
+
+## Return Types
+
+```typescript
+type OgTemplateRenderResult = string | ReactNode;
+```
+
+| Return type | Processing |
+|-------------|------------|
+| `string` | Parsed with [`satori-html`](/api-reference/core/html-string-rendering), then passed to Satori |
+| `ReactNode` | Passed directly to Satori (recommended for JSX templates) |
+| `Promise<...>` | Async renderers are fully supported |
+
+<Warning>
+  Returning `null` or `undefined` at the root throws a clear error instead of failing silently in the Satori pipeline.
+</Warning>
+
+## JSX vs HTML String
+
+<Tabs>
+  <Tab title="JSX (Recommended)">
+    Return a React-like element tree using Satori-compatible elements. Use the `tw` prop for Tailwind-like utilities and `style` for inline CSS.
+
+    ```tsx
+    import { defineTemplate, clsx } from "@ogify/core";
+
+    const template = defineTemplate({
+      fonts: [{ name: "Inter", weight: 400 }],
+      renderer: ({ params, width, height, isRTL }) => (
+        <div
+          tw={clsx("flex flex-col w-full h-full p-16", isRTL && "items-end")}
+          style={{ width, height }}
+        >
+          <div tw="text-[64px] font-bold">{params.title}</div>
+        </div>
+      ),
+    });
+    ```
+
+    Save template files as `.tsx` and ensure your `tsconfig.json` has `"jsx": "react-jsx"`.
+  </Tab>
+
+  <Tab title="HTML String">
+    Return an HTML markup string. Classes on `class` are parsed via [`satori-html`](/api-reference/core/html-string-rendering).
+
+    ```typescript
+    renderer: ({ params, width, height, isRTL }) => `
+      <div class="flex flex-col w-full h-full p-16" style="width: ${width}px; height: ${height}px;">
+        <div class="text-[64px] font-bold">${params.title}</div>
+      </div>
+    `,
+    ```
+
+    <Card title="HTML String Rendering" icon="code" href="/api-reference/core/html-string-rendering">
+      Full guide to the satori-html parsing path
+    </Card>
+  </Tab>
+</Tabs>
+
+## Scale / Supersampling
+
+`scale` only affects Resvg PNG output — not Satori layout. Templates always design against original `width`/`height`.
+
+<Card title="Scale & Supersampling" icon="image" href="/api-reference/core/scale-supersampling">
+  Why scale does not change layout, correct vs incorrect usage, and output dimensions
+</Card>
+
+| `scale` | Output PNG (1200×630 base) | Notes |
+|---------|---------------------------|-------|
+| `1` *(default)* | 1200 × 630 | Standard, backward compatible |
+| `1.25` | 1500 × 787 | Mild quality boost |
+| `1.5` | 1800 × 945 | Good balance |
+| `2` | 2400 × 1260 | **Recommended** — @2x retina |
+| `3` | 3600 × 1890 | @3x ultra |
+| `4` | 4800 × 2520 | Maximum (clamped) |
+
+Pass `scale` via `renderToImage` options — not in template layout code:
+
+```typescript
+const buffer = await renderer.renderToImage(
+  "basic",
+  { title: "Sharp Image" },
+  { scale: 2 }
+);
+```
+
+## Default Dimensions
+
+OGify uses the [Open Graph protocol](https://ogp.me/) recommended dimensions:
+
+- **Width:** 1200px
+- **Height:** 630px
+- **Aspect ratio:** 1.91:1 (works across Facebook, Twitter, LinkedIn, Discord)

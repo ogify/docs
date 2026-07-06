@@ -78,10 +78,11 @@ renderToImage<K extends keyof TMap>(
     </ParamField>
 
     <ParamField path="scale" type="number" default={1}>
-      Supersampling scale factor for higher-quality PNG output. Satori renders
-      the SVG at the original `width × height`; Resvg rasterises it at
+      Supersampling scale factor for higher-quality PNG output. Satori renders the
+      SVG at the original `width × height`; Resvg rasterises it at
       `width × scale` pixels wide. Clamped to `[1, 4]`. Float values are
-      supported (`1.5`, `2`, etc.).
+      supported (`1.5`, `2`, etc.). **Do not use for layout** — see
+      [Scale & Supersampling](/api-reference/core/scale-supersampling).
     </ParamField>
 
   </Expandable>
@@ -110,7 +111,11 @@ renderToImage<K extends keyof TMap>(
 
   </Step>
   <Step title="Cache Checking">
-    Generates a cache key and checks for cached result
+    Generates a cache key and checks for a cached PNG buffer
+  </Step>
+  <Step title="Inflight Deduplication">
+    If an identical render is already in progress, returns the shared in-flight
+    promise instead of starting a duplicate render
   </Step>
   <Step title="Before Render Hook">
     Calls `beforeRender` hook if configured

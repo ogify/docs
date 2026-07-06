@@ -7,17 +7,19 @@ OGify supports rendering emojis in your images by downloading vector or image as
 
 ## Configuration
 
-You can specify the `emojiProvider` when defining a template. It is set per template during template definition.
+Specify `emojiProvider` when defining a template. It is set per template during template definition.
 
-```typescript
+```tsx
 import { defineTemplate } from "@ogify/core";
 
 const template = defineTemplate({
   fonts: [{ name: "Inter", weight: 400 }],
-  emojiProvider: "twemoji", // Default
-  renderer: ({ params }) => {
-    return `<div>${params.title}</div>`;
-  },
+  emojiProvider: "twemoji",
+  renderer: ({ params }) => (
+    <div tw="flex w-full h-full items-center justify-center text-[48px]">
+      {params.title}
+    </div>
+  ),
 });
 ```
 
@@ -25,7 +27,7 @@ const template = defineTemplate({
 
 <CardGroup cols={2}>
   <Card title="Twemoji" icon="twitter">
-    Twitter Emojis (Default) - Colorful, rounded style
+    Twitter Emojis - Colorful, rounded style
   </Card>
   <Card title="Fluent" icon="microsoft">
     Microsoft Fluent Emojis - 3D style with color
@@ -34,7 +36,7 @@ const template = defineTemplate({
     Microsoft Fluent Emojis - Flat 2D variant
   </Card>
   <Card title="Noto" icon="google">
-    Google Noto Emojis - Current standard
+    Google Noto Emojis - Current standard (default)
   </Card>
   <Card title="Blobmoji" icon="google">
     Blobmojis - Google's blob-style emoji
@@ -46,17 +48,28 @@ const template = defineTemplate({
 
 ## Usage
 
-Simply include the emoji character in your string content. The renderer will automatically detect it and replace it with the corresponding image asset during generation.
+Include emoji characters directly in JSX text content. Satori detects them and replaces them with the corresponding image asset during rendering.
+
+```tsx
+renderer: ({ params }) => (
+  <div tw="flex flex-col w-full h-full items-center justify-center">
+    <div tw="text-[64px] font-bold">{params.title}</div>
+    <div tw="text-[32px] mt-4">🎉 🚀 ✨</div>
+  </div>
+);
+```
+
+You can also override the emoji provider per render call:
 
 ```typescript
-renderer: ({ params }) => `
-  <div>
-    <h1>${params.title}</h1> <!-- If title contains "👋", it will be rendered -->
-    <p>🎉 🚀 ✨</p>
-  </div>
-`;
+await renderer.renderToImage(
+  "myTemplate",
+  { title: "Hello 👋" },
+  { emojiProvider: "fluent" }
+);
 ```
 
 <Tip>
-  Emoji assets are automatically cached by the renderer’s cache system to avoid repeated network requests and improve performance.
+  Emoji assets are automatically cached by the renderer's cache system to avoid
+  repeated network requests and improve performance.
 </Tip>

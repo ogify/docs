@@ -2,7 +2,7 @@
 title: "basic"
 ---
 
-The `basic` template is a production-ready, highly customizable template that supports three different layouts and full RTL support.
+The `basic` template is a production-ready, highly customizable JSX template that supports three layouts, HTML subtitles via `htmlSnippet`, and full RTL support.
 
 ![Basic Template](/images/basic.png)
 
@@ -16,11 +16,14 @@ import type { TemplateParams } from "@ogify/templates/basic";
 ## Parameters
 
 <ParamField path="title" type="string" required>
-  The main heading text
+  The main heading text. Supports plain text or trusted inline HTML via
+  [`htmlSnippet`](/api-reference/core/html-snippet).
 </ParamField>
 
 <ParamField path="subtitle" type="string">
-  Optional subtitle or description text
+  Optional subtitle or description text. Supports plain text or trusted inline HTML
+  via [`htmlSnippet`](/api-reference/core/html-snippet) — use `<span class="...">` for
+  styled words (e.g. `<span class="font-bold">Zero-config</span> dynamic OG images`).
 </ParamField>
 
 <ParamField path="brandName" type="string">
@@ -162,6 +165,15 @@ const buffer = await renderer.renderToImage("basic", {
 });
 ```
 
+```typescript With HTML Subtitle
+const buffer = await renderer.renderToImage("basic", {
+  title: "Generate beautiful OG images",
+  subtitle:
+    '<span class="font-bold">Zero-config</span> dynamic OG images for Next.js, Nuxt, and Remix.',
+  layout: "aligned",
+});
+```
+
 ```typescript RTL Support
 const buffer = await renderer.renderToImage(
   "basic",
@@ -201,6 +213,11 @@ The basic template uses **JetBrains Mono** font in two weights:
 ## Features
 
 <AccordionGroup>
+  <Accordion icon="code" title="HTML Subtitle">
+    Title and subtitle accept trusted inline HTML. Styled words render correctly
+    without raw tags showing — powered by `htmlSnippet` under the hood.
+  </Accordion>
+
   <Accordion icon="language" title="RTL Support">
     Fully supports right-to-left languages. Pass `isRTL: true` in the options to enable RTL layout.
   </Accordion>

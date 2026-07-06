@@ -1,0 +1,70 @@
+---
+title: "clsx"
+description: "Conditional class name utility for JSX templates"
+---
+
+`clsx` merges class names for use with the `tw` prop in JSX templates. It supports strings, arrays, objects, and conditional values — the same API surface as the popular [`clsx`](https://github.com/lukeed/clsx) package.
+
+## Import
+
+```typescript
+import { clsx } from "@ogify/core";
+```
+
+## Function Signature
+
+```typescript
+function clsx(...inputs: ClassValue[]): string;
+
+type ClassValue =
+  | string
+  | number
+  | bigint
+  | boolean
+  | null
+  | undefined
+  | ClassValue[]
+  | Record<string, unknown>;
+```
+
+## Examples
+
+<CodeGroup>
+
+```typescript Strings and conditionals
+clsx("text-xl", "font-bold");
+// → "text-xl font-bold"
+
+clsx("base", isActive && "active", isDisabled && "opacity-50");
+// → "base active" (when isActive is true, isDisabled is false)
+```
+
+```typescript Object syntax
+clsx({
+  "text-center": layout === "centered",
+  "text-right": isRTL,
+  "text-left": !isRTL && layout !== "centered",
+});
+```
+
+```typescript Arrays
+clsx(["flex", "w-full"], isRTL ? "flex-row-reverse" : "flex-row");
+```
+
+```typescript In templates
+<div
+  tw={clsx(
+    "w-full font-bold leading-[1.25] flex flex-wrap",
+    subtitle ? "text-[56px]" : "text-[64px]",
+    layout === "centered" ? "justify-center" : isRTL ? "justify-end" : "justify-start"
+  )}
+>
+  {params.title}
+</div>
+```
+
+</CodeGroup>
+
+<Note>
+  `clsx` output is passed to the `tw` prop, which maps Tailwind-like utility classes to Satori-compatible inline styles. See [Styles](/features/styles) for supported utilities.
+</Note>

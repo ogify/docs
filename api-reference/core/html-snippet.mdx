@@ -1,0 +1,141 @@
+---
+title: "htmlSnippet"
+description: "Parse trusted inline HTML into Satori-compatible flex word containers"
+---
+
+`htmlSnippet()` parses small HTML fragments into Satori-compatible React nodes. It works around [Satori's inline layout limitation](https://github.com/vercel/satori/issues/484) by splitting text into per-word flex items with `flex-wrap` and `gap`.
+
+<Warning>
+  **Trusted input only.** `htmlSnippet` is designed for HTML authored by template developers — not arbitrary end-user content. Disallowed tags and attributes are stripped with a plain-text fallback.
+</Warning>
+
+## Import
+
+```typescript
+import { htmlSnippet } from "@ogify/core";
+```
+
+## Function Signature
+
+```typescript
+function htmlSnippet(
+  value: string,
+  options?: HtmlSnippetOptions
+): ReactNode;
+```
+
+## Parameters
+
+<ParamField path="value" type="string" required>
+  HTML fragment or plain text. When no HTML tags are detected, the string is returned unchanged (**plain mode**).
+</ParamField>
+
+<ParamField path="options" type="HtmlSnippetOptions">
+  Layout options for the word container in **HTML mode**.
+
+  <Expandable title="HtmlSnippetOptions">
+    <ParamField path="justify" type="'flex-start' | 'center' | 'flex-end'" default="flex-start">
+      Flex main-axis alignment for the word container.
+    </ParamField>
+
+    <ParamField path="gap" type="number">
+      Gap between word items in pixels. Overrides the font-size-derived default.
+    </ParamField>
+
+    <ParamField path="fontSize" type="number">
+      Font size in pixels. Used to derive gap when `gap` is omitted (~29% of font size, minimum 1px).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Returns
+
+<ResponseField name="result" type="ReactNode">
+  - **Plain mode** — returns the original string.
+  - **HTML mode** — returns a flex container with per-word `<span>` children, preserving inline styles from allowed tags.
+</ResponseField>
+
+## Allowed Tags
+
+Only these inline tags are permitted:
+
+| Tag | Purpose |
+|-----|---------|
+| `span` | Styled inline text (use `class` for Tailwind-like utilities) |
+| `b`, `strong` | Bold emphasis |
+| `em`, `i` | Italic emphasis |
+| `br` | Line break |
+
+Tags like `div`, `p`, `a`, `img`, `script`, and event handlers (`onclick`, etc.) are rejected. Invalid fragments fall back to plain text with a development warning.
+
+## Examples
+
+<CodeGroup>
+
+```typescript Plain mode
+// No HTML tags — returned as-is
+const title = htmlSnippet("Hello World");
+// → "Hello World"
+```
+
+```typescript HTML mode
+import { htmlSnippet } from "@ogify/core";
+
+const subtitle = htmlSnippet(
+  '<span class="font-bold">Zero-config</span> dynamic OG images for Next.js.',
+  { fontSize: 28 }
+);
+// → flex container with per-word spans; "Zero-config" inherits font-bold
+```
+
+```typescript With alignment
+const title = htmlSnippet(
+  '<span class="font-bold">Featured</span> article',
+  {
+    justify: "center",
+    fontSize: 64,
+  }
+);
+```
+
+```typescript In a JSX template
+import { defineTemplate, clsx, htmlSnippet } from "@ogify/core";
+
+const template = defineTemplate({
+  fonts: [{ name: "Inter", weight: 400 }],
+  renderer: ({ params, isRTL }) => (
+    <div tw={clsx("w-full flex", isRTL ? "justify-end" : "justify-start")}>
+      {htmlSnippet(params.title, {
+        justify: isRTL ? "flex-end" : "flex-start",
+        fontSize: 56,
+      })}
+    </div>
+  ),
+});
+```
+
+</CodeGroup>
+
+## Migration from objectToStyle
+
+`objectToStyle` has been removed from `@ogify/core`. Use `htmlSnippet` for inline styled text, or write inline `style` attributes / `clsx` for layout:
+
+```typescript
+// Before (removed)
+import { objectToStyle } from "@ogify/core";
+const style = objectToStyle({ display: "flex", color: "red" }, isRTL);
+
+// After — layout via clsx / inline styles
+import { clsx, htmlSnippet } from "@ogify/core";
+
+<div
+  tw={clsx("flex w-full", isRTL ? "flex-row-reverse" : "flex-row")}
+  style={{ color: "red" }}
+>
+  {htmlSnippet(params.subtitle, { fontSize: 28 })}
+</div>
+```
+
+<Tip>
+  The `basic` template uses `htmlSnippet` for both `title` and `subtitle`, enabling rich inline styling with Tailwind-like classes on `<span>` elements.
+</Tip>

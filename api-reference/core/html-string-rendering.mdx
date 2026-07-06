@@ -1,0 +1,140 @@
+---
+title: "HTML String Rendering"
+description: "How OGify parses HTML strings with satori-html before Satori"
+---
+
+When a template `renderer` returns a **`string`**, OGify parses it with [`satori-html`](https://github.com/natemoo-re/satori-html) before passing the result to Satori. This is the **HTML string path** of the [rendering pipeline](/api-reference/core/rendering-pipeline).
+
+<Note>
+  JSX templates (returning `ReactNode`) skip this step entirely — the element tree goes
+  directly to Satori. See [Custom Templates](/customization/custom-templates) for the
+  recommended JSX approach.
+</Note>
+
+## How It Works
+
+```mermaid
+flowchart LR
+  A["renderer() returns string"] --> B["satori-html: html()"]
+  B --> C["React element tree"]
+  C --> D["Satori → SVG"]
+  D --> E["Resvg → PNG"]
+```
+
+In code (`renderTemplate`):
+
+```typescript
+const raw = await template.renderer({ params, ...options, width, height });
+
+// HTML string → satori-html tree; ReactNode → use as-is
+const element = typeof raw === "string" ? html(raw) : raw;
+
+const svg = await satori(element, { width, height, fonts, ... });
+```
+
+| Return type | Parsing step |
+|-------------|--------------|
+| `string` | `html(string)` via satori-html |
+| `ReactNode` | None — passed directly to Satori |
+
+## `class` → `tw` Mapping
+
+`satori-html` converts standard HTML `class` attributes into Satori's experimental `tw` prop. This lets you use Tailwind-like utility classes in HTML strings:
+
+```typescript
+renderer: ({ params, width, height }) => `
+  <div class="flex flex-col w-full h-full p-16 bg-slate-900 text-white"
+       style="width: ${width}px; height: ${height}px;">
+    <div class="text-[64px] font-bold">${params.title}</div>
+    <div class="text-[28px] opacity-80 mt-4">${params.description}</div>
+  </div>
+`,
+```
+
+Equivalent JSX (no `satori-html` step):
+
+```tsx
+renderer: ({ params, width, height }) => (
+  <div
+    tw="flex flex-col w-full h-full p-16 bg-slate-900 text-white"
+    style={{ width, height }}
+  >
+    <div tw="text-[64px] font-bold">{params.title}</div>
+    <div tw="text-[28px] opacity-80 mt-4">{params.description}</div>
+  </div>
+),
+```
+
+## Inline Styles
+
+Use the `style` attribute for CSS properties not covered by utility classes:
+
+```typescript
+renderer: ({ params }) => `
+  <div class="flex w-full h-full" style="background: linear-gradient(135deg, #667eea, #764ba2);">
+    <span class="text-[48px] font-bold" style="color: #ffffff;">
+      ${params.title}
+    </span>
+  </div>
+`,
+```
+
+## When to Use HTML Strings
+
+<AccordionGroup>
+  <Accordion icon="check" title="Good fit">
+    - Migrating existing HTML-based OG templates
+    - Simple layouts without conditional rendering
+    - Prototyping with familiar HTML syntax
+  </Accordion>
+
+  <Accordion icon="xmark" title="Prefer JSX instead">
+    - Conditional blocks (`{showBadge ? ... : null}`)
+    - Component composition and reuse
+    - Type-safe props and IDE autocomplete
+    - Using [`htmlSnippet`](/api-reference/core/html-snippet) for inline styled text
+  </Accordion>
+</AccordionGroup>
+
+## Limitations
+
+<Warning>
+  **HTML string constraints**
+
+  - No `dangerouslySetInnerHTML` equivalent — interpolate values directly into the string
+  - Complex conditionals require string concatenation or ternaries in template literals
+  - Arbitrary HTML tags may not be supported by Satori — stick to `div`, `span`, `img`, etc.
+  - Not all Tailwind classes map correctly — see [Styles](/features/styles)
+</Warning>
+
+For inline styled words inside text (bold highlights, opacity variants), use [`htmlSnippet`](/api-reference/core/html-snippet) in JSX templates instead of raw HTML in strings.
+
+## Async HTML Renderers
+
+HTML string renderers support `async` — useful when fetching data before building markup:
+
+```typescript
+const template = defineTemplate({
+  fonts: [{ name: "Inter", weight: 400 }],
+  renderer: async ({ params, width, height }) => {
+    const meta = await fetchPostMeta(params.id);
+    return `
+      <div class="flex flex-col w-full h-full p-16" style="width: ${width}px; height: ${height}px;">
+        <div class="text-[64px] font-bold">${meta.title}</div>
+        <div class="text-[24px] opacity-60 mt-4">${meta.author}</div>
+      </div>
+    `;
+  },
+});
+```
+
+## Comparison: HTML String vs JSX
+
+| | HTML String | JSX (`ReactNode`) |
+|---|-------------|-------------------|
+| Parsing | `satori-html` required | Direct to Satori |
+| Styling | `class` attribute | `tw` prop |
+| Conditionals | Template literal ternaries | `{condition ? ... : null}` |
+| Type safety | Limited | Full TypeScript |
+| File extension | `.ts` | `.tsx` (recommended) |
+| Recommended | Legacy / simple cases | **Yes** |

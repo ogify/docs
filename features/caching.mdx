@@ -62,10 +62,17 @@ OGify includes a built-in caching system to improve performance by reducing redu
 </Accordion>
 
   <Accordion icon="image" title="Generated Images">
-    (Optional) Depending on implementation, images with identical parameters may
-    be served from cache.
+    Rendered PNG buffers are cached by a key derived from the template ID,
+    merged parameters, and render options. Identical requests return the cached
+    buffer without re-rendering.
   </Accordion>
 </AccordionGroup>
+
+## Concurrent Render Deduplication
+
+When multiple requests arrive with the same cache key before the first render completes, OGify deduplicates them automatically. All callers share the same in-flight `Promise` and receive the same PNG buffer once rendering finishes.
+
+This prevents redundant Satori/Resvg work during traffic spikes or parallel page builds.
 
 ## Disabling Cache
 

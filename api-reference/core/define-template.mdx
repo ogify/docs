@@ -5,15 +5,16 @@ title: "defineTemplate"
 Helper function to define a template with type safety. Use this when creating custom templates for your Open Graph images.
 
 <Note>
-  For complete type definitions and interfaces, see the [Type
-  Definitions](/api-reference/core/type-definitions) page.
+  For the full rendering pipeline and all renderer context options, see
+  [Rendering Pipeline](/api-reference/core/rendering-pipeline). For type definitions,
+  see [Type Definitions](/api-reference/core/type-definitions).
 </Note>
 
 ## Function Signature
 
 ```typescript
 function defineTemplate<T extends OgTemplateParams>(
-  config: TemplateConfig<T>
+  config: OgTemplate<T>
 ): OgTemplate<T>;
 ```
 
@@ -21,21 +22,36 @@ function defineTemplate<T extends OgTemplateParams>(
 
 <ParamField path="config" type="object" required>
   Template configuration
-  
+
   <Expandable title="properties">
     <ParamField path="renderer" type="function" required>
-      Function that returns an HTML string. Receives `{ params, isRTL }`
-      
+      Function that returns a **React node tree** (recommended) or an HTML string. Receives the full renderer context:
+
       ```typescript
-      (context: { params: T; isRTL: boolean }) => string
+      (
+        props: OgTemplateOptions & { params: T }
+      ) => string | ReactNode | Promise<string | ReactNode>;
       ```
+
+      **Context props:**
+
+      | Prop | Type | Default | Description |
+      |------|------|---------|-------------|
+      | `params` | `T` | — | Merged template parameters |
+      | `width` | `number` | `1200` | Canvas width (original, not scaled) |
+      | `height` | `number` | `630` | Canvas height (original, not scaled) |
+      | `fonts` | `OgFontConfig[]` | template fonts | Font override from render options |
+      | `emojiProvider` | `OgEmojiProvider` | template default | Emoji provider override |
+      | `isRTL` | `boolean` | `false` | Right-to-left layout |
+      | `scale` | `number` | `1` | Supersampling — [do not use for layout](/api-reference/core/scale-supersampling) |
     </ParamField>
 
     <ParamField path="fonts" type="OgFontConfig[]" required>
-      Array of font definitions required by the template
+      Array of font definitions required by the template. Validated at registration —
+      throws if `fonts` is not an array.
     </ParamField>
 
-    <ParamField path="emojiProvider" type="string" default="twemoji">
+    <ParamField path="emojiProvider" type="OgEmojiProvider" default="noto">
       Emoji provider to use. Options: `'twemoji'`, `'fluent'`, `'fluentFlat'`, `'noto'`, `'blobmoji'`, `'openmoji'`
     </ParamField>
 
@@ -45,15 +61,15 @@ function defineTemplate<T extends OgTemplateParams>(
 ## Returns
 
 <ResponseField name="template" type="OgTemplate<T>">
-  The defined template object that can be used with `createRenderer`
+  The validated template object that can be used with `createRenderer`
 </ResponseField>
 
-## Example
+## Examples
 
 <CodeGroup>
 
-```typescript Basic Template
-import { defineTemplate } from "@ogify/core";
+```tsx JSX Template (Recommended)
+import { defineTemplate, clsx, htmlSnippet } from "@ogify/core";
 
 export type MyTemplateParams = {
   title: string;
@@ -66,23 +82,27 @@ const myTemplate = defineTemplate<MyTemplateParams>({
     { name: "Inter", weight: 700 },
   ],
   emojiProvider: "twemoji",
-  renderer: ({ params, isRTL }) => {
-    return `
-      <div style="display: flex; width: 100%; height: 100%; direction: ${
-        isRTL ? "rtl" : "ltr"
-      };">
-        <h1>${params.title}</h1>
-        <p>${params.description}</p>
+  renderer: ({ params, isRTL, width, height }) => (
+    <div
+      tw={clsx(
+        "flex flex-col w-full h-full bg-white p-16",
+        isRTL ? "items-end text-right" : "items-start text-left"
+      )}
+      style={{ width, height }}
+    >
+      <div tw="text-[64px] font-bold">
+        {htmlSnippet(params.title, { fontSize: 64 })}
       </div>
-    `;
-  },
+      <div tw="text-[28px] mt-4 opacity-80">{params.description}</div>
+    </div>
+  ),
 });
 
 export default myTemplate;
 ```
 
-```typescript Advanced Template
-import { defineTemplate, objectToStyle } from "@ogify/core";
+```tsx Advanced Template
+import { defineTemplate, clsx, htmlSnippet } from "@ogify/core";
 
 export type AdvancedTemplateParams = {
   title: string;
@@ -97,40 +117,58 @@ const advancedTemplate = defineTemplate<AdvancedTemplateParams>({
     { name: "Roboto", weight: 700 },
   ],
   emojiProvider: "fluent",
-  renderer: ({ params, isRTL }) => {
-    const containerStyle = objectToStyle(
-      {
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-        height: "100%",
+  renderer: ({ params, isRTL }) => (
+    <div
+      tw={clsx(
+        "flex flex-col w-full h-full p-[60px]",
+        isRTL ? "items-end text-right" : "items-start text-left"
+      )}
+      style={{
         backgroundColor: params.backgroundColor,
         color: params.textColor,
-        padding: "60px",
-      },
-      isRTL
-    );
-
-    return `
-      <div style="${containerStyle}">
-        <h1 style="font-size: 72px; font-weight: 700; margin: 0;">
-          ${params.title}
-        </h1>
-        ${
-          params.subtitle
-            ? `
-          <p style="font-size: 36px; margin-top: 20px;">
-            ${params.subtitle}
-          </p>
-        `
-            : ""
-        }
+      }}
+    >
+      <div tw="text-[72px] font-bold">
+        {htmlSnippet(params.title, { fontSize: 72 })}
       </div>
-    `;
-  },
+      {params.subtitle ? (
+        <div tw="text-[36px] mt-5 opacity-80">
+          {htmlSnippet(params.subtitle, { fontSize: 36 })}
+        </div>
+      ) : null}
+    </div>
+  ),
 });
 
 export default advancedTemplate;
+```
+
+```typescript HTML String (Alternative)
+import { defineTemplate } from "@ogify/core";
+
+const htmlTemplate = defineTemplate({
+  fonts: [{ name: "Inter", weight: 400 }],
+  renderer: ({ params, isRTL, width, height }) => `
+    <div class="flex flex-col w-full h-full p-16 bg-white"
+         style="width: ${width}px; height: ${height}px; direction: ${isRTL ? "rtl" : "ltr"};">
+      <div class="text-[64px] font-bold">${params.title}</div>
+    </div>
+  `,
+});
+```
+
+```tsx Async Renderer
+const asyncTemplate = defineTemplate({
+  fonts: [{ name: "Inter", weight: 400 }],
+  renderer: async ({ params }) => {
+    const data = await fetchMetadata(params.id);
+    return (
+      <div tw="flex w-full h-full items-center justify-center">
+        <div tw="text-[48px] font-bold">{data.title}</div>
+      </div>
+    );
+  },
+});
 ```
 
 </CodeGroup>

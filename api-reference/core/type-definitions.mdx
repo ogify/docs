@@ -52,11 +52,25 @@ type OgTemplate<TParams = OgTemplateParams> = {
 ```
 
 <ParamField path="renderer" type="function" required>
-  Function that generates the template output from template parameters. Can
-  return:
-  - **`string`** — an HTML string, parsed with `satori-html` before being passed to Satori.
-  - **`ReactNode`** — a JSX element passed directly to Satori (no HTML parsing step).
-  - **`Promise`** of either — async renderers are fully supported.
+  Function that generates the template output. Receives `OgTemplateOptions & { params: TParams }` and can return:
+
+  - **`ReactNode`** — JSX element tree passed directly to Satori (**recommended**)
+  - **`string`** — HTML string parsed with [`satori-html`](/api-reference/core/html-string-rendering) before Satori
+  - **`Promise`** of either — async renderers are fully supported
+
+  **Renderer context props:**
+
+  | Prop | Type | Default | Description |
+  |------|------|---------|-------------|
+  | `params` | `TParams` | — | Merged template parameters |
+  | `width` | `number` | `1200` | Canvas width (original, not scaled) |
+  | `height` | `number` | `630` | Canvas height (original, not scaled) |
+  | `fonts` | `OgFontConfig[]` | template fonts | Font override from render options |
+  | `emojiProvider` | `OgEmojiProvider` | template default | Emoji provider override |
+  | `isRTL` | `boolean` | `false` | Right-to-left layout |
+  | `scale` | `number` | `1` | Supersampling factor ([do not use for layout](/api-reference/core/scale-supersampling)) |
+
+  See [Rendering Pipeline](/api-reference/core/rendering-pipeline) for details.
 
   <Warning>
     Returning `null` or `undefined` at the root will throw a clear error instead
@@ -64,15 +78,15 @@ type OgTemplate<TParams = OgTemplateParams> = {
   </Warning>
 
   <Note>
-    Satori does not support `dangerouslySetInnerHTML`. For inline HTML inside
-    JSX templates, return a full HTML string from `renderer` instead, or build
-    the element tree using Satori-compatible elements.
+    Satori does not support `dangerouslySetInnerHTML`. For inline styled text in
+    JSX templates, use [`htmlSnippet`](/api-reference/core/html-snippet) to parse
+    trusted HTML fragments into Satori-compatible flex word containers.
   </Note>
 </ParamField>
 
 <ParamField path="fonts" type="OgFontConfig[]" required>
-  Custom fonts to use in this template. Fonts are loaded in the order specified
-  and should cover all characters used in the template.
+  Custom fonts to use in this template. Must be a non-empty array — `validateTemplate`
+  throws at registration time if `fonts` is missing.
 </ParamField>
 
 <ParamField path="emojiProvider" type="OgEmojiProvider">
@@ -228,7 +242,7 @@ type OgFontFormat = "woff" | "ttf";
 
 ### OgTemplateOptions
 
-Props passed to template HTML rendering functions. Contains user-provided parameters and optional dimension overrides.
+Props passed to the template `renderer` function, merged with `params`. Also available as options in `renderToImage`.
 
 ```typescript
 type OgTemplateOptions = {
@@ -240,6 +254,14 @@ type OgTemplateOptions = {
   scale?: number;
 };
 ```
+
+The renderer is always called as:
+
+```typescript
+template.renderer({ params, ...options, width, height });
+```
+
+Templates always receive the **original** `width`/`height` values. The `scale` option only affects Resvg rasterization — not Satori layout. See [Scale & Supersampling](/api-reference/core/scale-supersampling).
 
 <ParamField path="fonts" type="OgFontConfig[]">
   Custom fonts to use in this template
@@ -285,13 +307,25 @@ type OgTemplateOptions = {
 
 <CodeGroup>
 
-```typescript Example Usage
-const html = (props: OgTemplateOptions) => `
-  <div style="width: ${props.width}px; height: ${props.height}px">
-    <h1>${props.params.title}</h1>
-    <p>${props.params.description}</p>
+```tsx JSX Renderer (Recommended)
+renderer: ({ params, width, height, isRTL }) => (
+  <div
+    tw="flex flex-col w-full h-full"
+    style={{ width, height }}
+  >
+    <div tw="text-[64px] font-bold">{params.title}</div>
+    <div tw="text-[28px]">{params.description}</div>
   </div>
-`;
+),
+```
+
+```typescript HTML String Renderer
+renderer: ({ params, width, height }) => `
+  <div style="width: ${width}px; height: ${height}px">
+    <h1>${params.title}</h1>
+    <p>${params.description}</p>
+  </div>
+`,
 ```
 
 </CodeGroup>
@@ -334,6 +368,45 @@ type OgEmojiProvider =
     Open-source emoji with outlined style
   </Accordion>
 </AccordionGroup>
+
+---
+
+## Utility Types
+
+### OgTemplateRenderResult
+
+Return type of a template `renderer` function.
+
+```typescript
+type OgTemplateRenderResult = string | ReactNode;
+```
+
+- **`ReactNode`** — passed directly to Satori (JSX templates)
+- **`string`** — parsed with [`satori-html`](/api-reference/core/html-string-rendering), then passed to Satori
+
+### HtmlSnippetOptions
+
+Options for [`htmlSnippet`](/api-reference/core/html-snippet) word-container layout.
+
+```typescript
+type HtmlSnippetOptions = {
+  justify?: "flex-start" | "center" | "flex-end";
+  gap?: number;
+  fontSize?: number;
+};
+```
+
+<ParamField path="justify" type="'flex-start' | 'center' | 'flex-end'" default="flex-start">
+  Flex main-axis alignment for the word container.
+</ParamField>
+
+<ParamField path="gap" type="number">
+  Gap between word items in pixels. Overrides the font-size-derived default.
+</ParamField>
+
+<ParamField path="fontSize" type="number">
+  Font size in pixels. Used to derive gap when `gap` is omitted (~29% of font size).
+</ParamField>
 
 ---
 

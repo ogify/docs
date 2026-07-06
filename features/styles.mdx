@@ -49,9 +49,53 @@ Satori supports a robust subset of CSS. Key properties include:
   </Accordion>
 </AccordionGroup>
 
+## Supported Elements
+
+In JSX templates, use Satori-compatible elements with the `tw` prop or `style` prop:
+
+```tsx
+<div tw="flex flex-col w-full h-full">
+  <div tw="text-[64px] font-bold">{params.title}</div>
+  <img tw="h-16" src={params.logoUrl} />
+</div>
+```
+
+Common elements: `div`, `span`, `img`, `svg`, `path`. Use [`htmlSnippet`](/api-reference/core/html-snippet) for inline styled text inside headings.
+
+## clsx Utility
+
+OGify exports a [`clsx`](/api-reference/core/clsx) helper for building conditional class strings in JSX templates. It supports strings, arrays, objects, and boolean guards:
+
+```typescript
+import { clsx } from "@ogify/core";
+
+<div
+  tw={clsx(
+    "flex w-full",
+    isRTL ? "flex-row-reverse text-right" : "flex-row text-left",
+    { "justify-center": layout === "centered" }
+  )}
+/>
+```
+
+## htmlSnippet for Inline HTML
+
+Satori cannot render arbitrary inline HTML inside text nodes ([vercel/satori#484](https://github.com/vercel/satori/issues/484)). Use [`htmlSnippet`](/api-reference/core/html-snippet) to parse trusted HTML fragments into per-word flex containers:
+
+```typescript
+import { htmlSnippet } from "@ogify/core";
+
+htmlSnippet(
+  '<span class="font-bold">Zero-config</span> OG images for Next.js.',
+  { fontSize: 28, justify: "flex-start" }
+);
+```
+
+Allowed tags: `span`, `b`, `strong`, `em`, `i`, `br`. Use `class` on `<span>` elements for Tailwind-like styling.
+
 ## Tailwind-like Utilities
 
-OGify includes a utility class processor (similar to `clsx` + a mini-Tailwind engine) that maps class names to styles.
+OGify includes a utility class processor (`clsx` + a mini-Tailwind engine) that maps class names to styles via the `tw` prop.
 
 ### Common Mappings
 

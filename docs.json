@@ -65,7 +65,12 @@
             "pages": [
               "api-reference/core/create-renderer",
               "api-reference/core/template-renderer",
+              "api-reference/core/rendering-pipeline",
+              "api-reference/core/html-string-rendering",
+              "api-reference/core/scale-supersampling",
               "api-reference/core/define-template",
+              "api-reference/core/html-snippet",
+              "api-reference/core/clsx",
               "api-reference/core/type-definitions"
             ]
           },

@@ -7,10 +7,12 @@ While OGify comes with production-ready templates (browse them at the [Template 
 
 ## defineTemplate
 
-The `defineTemplate` helper is the core building block. It ensures type safety and provides a structure for your template.
+The `defineTemplate` helper is the core building block. It ensures type safety and validates your template at registration time.
 
-```typescript
-import { defineTemplate } from "@ogify/core";
+Templates use a **React-like JSX syntax** (recommended) or return HTML strings. Both are converted to PNG via the [rendering pipeline](/api-reference/core/rendering-pipeline).
+
+```tsx
+import { defineTemplate, clsx } from "@ogify/core";
 
 export type MyTemplateParams = {
   title: string;
@@ -24,75 +26,137 @@ const myTemplate = defineTemplate<MyTemplateParams>({
     { name: "Inter", weight: 700 },
   ],
 
-  // 2. Define Renderer Function
-  renderer: ({ params, isRTL }) => {
-    // Return HTML string
-    return `
-      <div style="display: flex; width: 100%; height: 100%; background: white;">
-        <h1>${params.title}</h1>
-      </div>
-    `;
-  },
+  // 2. Define Renderer — return JSX (recommended)
+  renderer: ({ params, isRTL, width, height }) => (
+    <div
+      tw={clsx("flex flex-col w-full h-full bg-white p-16")}
+      style={{ width, height }}
+    >
+      <div tw="text-[64px] font-bold">{params.title}</div>
+      <div tw="text-[28px] mt-4 opacity-80">{params.description}</div>
+    </div>
+  ),
 
-  // 3. (Optional) Custom Emoji provider
+  // 3. (Optional) Emoji provider
   emojiProvider: "twemoji",
 });
 ```
+
+<Note>
+  Save template files as `.tsx` and set `"jsx": "react-jsx"` in your `tsconfig.json`.
+  You do not need React as a runtime dependency — OGify uses Satori's JSX factory.
+</Note>
 
 <Card
   title="defineTemplate"
   icon="code"
   href="/api-reference/core/define-template"
 >
-  Helper function to define a template with type safety. Use this when creating
-  custom templates for your Open Graph images.
+  Helper function to define a template with type safety, including the full renderer
+  context (`params`, `width`, `height`, `isRTL`, `fonts`, `emojiProvider`, `scale`).
 </Card>
+
+## Renderer Context
+
+Your `renderer` receives all render options plus `params`. Use these props to build dynamic layouts:
+
+| Prop | Description |
+|------|-------------|
+| `params` | Merged template data from `renderToImage` |
+| `width` / `height` | Canvas dimensions (default 1200 × 630) |
+| `isRTL` | Right-to-left layout flag |
+| `fonts` | Font override from render options |
+| `emojiProvider` | Emoji provider override |
+| `scale` | Supersampling factor — **do not use for layout**. See [Scale & Supersampling](/api-reference/core/scale-supersampling) |
+
+See [Rendering Pipeline](/api-reference/core/rendering-pipeline) for the complete reference.
 
 ## Styling
 
-We use [Satori](https://github.com/vercel/satori) under the hood, which supports a subset of CSS properties. For a complete list of supported CSS features, see [Styles](/features/styles).
+We use [Satori](https://github.com/vercel/satori) under the hood, which supports a subset of CSS properties. For a complete list, see [Styles](/features/styles).
 
-### Inline Styles
+### `tw` Prop (Tailwind-like)
 
-You can simply write inline styles in your HTML string.
+Use the `tw` prop on JSX elements for utility classes. Combine with [`clsx`](/api-reference/core/clsx) for conditionals:
 
-```typescript
-<div style="color: red; font-size: 48px;">Title</div>
-```
+```tsx
+import { clsx } from "@ogify/core";
 
-### Tailwind-like Classes
-
-OGify's renderer passes the HTML through a processor that understands basic Tailwind-like utility classes (e.g., `flex`, `p-4`, `text-center`, `bg-blue-500`).
-
-```typescript
-<div class="flex flex-col items-center justify-center w-full h-full bg-slate-900 text-white">
+<div tw={clsx(
+  "flex flex-col items-center justify-center w-full h-full bg-slate-900 text-white",
+  isRTL && "items-end"
+)}>
   ...
 </div>
 ```
 
+### Inline Styles
+
+Use the `style` prop for CSS properties not covered by utilities:
+
+```tsx
+<div style={{ backgroundColor: params.color, width, height }}>
+  ...
+</div>
+```
+
+### Inline HTML Styling
+
+For styled words inside text, use [`htmlSnippet`](/api-reference/core/html-snippet):
+
+```tsx
+{htmlSnippet('<span class="font-bold">Featured</span> article', { fontSize: 28 })}
+```
+
 <Warning>
-  Not all Tailwind classes are supported. It essentially maps common utility
-  classes to inline styles for Satori.
+  Not all Tailwind classes are supported. OGify maps common utility classes to
+  Satori-compatible inline styles.
 </Warning>
+
+## HTML String Alternative
+
+You can still return HTML strings from `renderer`. Classes on `class` are parsed via [`satori-html`](/api-reference/core/html-string-rendering):
+
+```typescript
+renderer: ({ params, width, height }) => `
+  <div class="flex w-full h-full" style="width: ${width}px; height: ${height}px;">
+    <h1 class="text-[64px] font-bold">${params.title}</h1>
+  </div>
+`,
+```
+
+JSX is recommended for better type safety, conditional rendering, and composition. See the full [HTML String Rendering](/api-reference/core/html-string-rendering) guide.
 
 ## Dynamic Content
 
-Your renderer function receives `params` which contains whatever data you pass during `renderToImage`. Use this to inject titles, images, dates, etc.
+Your renderer receives `params` from `renderToImage`. Use JSX expressions to inject dynamic values:
+
+```tsx
+renderer: ({ params }) => (
+  <div tw="flex w-full h-full">
+    {params.showBadge ? <div tw="text-sm bg-white/20 px-4 py-2 rounded">{params.badge}</div> : null}
+    <div tw="text-[48px] font-bold">{params.title}</div>
+  </div>
+),
+```
 
 ## Best Practices
 
 <AccordionGroup>
-  <Accordion icon="lightbulb" title="Keep it simple">
-    Satori is powerful but has some limitations compared to a full browser
-    engine. Avoid complex CSS selectors or deeply nested absolute positioning if
-    possible.
+  <Accordion icon="code" title="Prefer JSX over HTML strings">
+    JSX templates give you type safety, conditional rendering (`{condition ? ... : null}`),
+    and composition without string interpolation.
   </Accordion>
 
-{" "}
+  <Accordion icon="lightbulb" title="Keep it simple">
+    Satori is powerful but has limitations compared to a full browser engine.
+    Avoid complex CSS selectors or deeply nested absolute positioning.
+  </Accordion>
 
-<Accordion icon="table-layout" title="Use display: flex">
-  Flexbox is the most reliable way to layout content in Satori.
-</Accordion>
+  <Accordion icon="table-layout" title="Use display: flex">
+    Flexbox is the most reliable layout mode in Satori. Use the `tw` prop with
+    `flex`, `flex-col`, `items-center`, `justify-between`, etc.
+  </Accordion>
 
   <Accordion icon="language" title="Test with isRTL">
     Ensure your template handles RTL content gracefully if you plan to support
@@ -103,6 +167,9 @@ Your renderer function receives `params` which contains whatever data you pass d
 ## Features
 
 <CardGroup cols={2}>
+  <Card title="Rendering Pipeline" icon="gears" href="/api-reference/core/rendering-pipeline">
+    How templates become PNG images
+  </Card>
   <Card title="Caching" icon="zap" href="/features/caching">
     A smart caching layer to improve performance
   </Card>
@@ -112,7 +179,7 @@ Your renderer function receives `params` which contains whatever data you pass d
   <Card title="Emoji Loader" icon="face-smile" href="/features/emoji-loader">
     Rendering emojis in your templates
   </Card>
-  <Card title="RTL Support" icon="language" href="/features/rtl">
+  <Card title="RTL Support" icon="language" href="/features/rtl-support">
     Right-to-left language support
   </Card>
   <Card title="Styles" icon="wand-magic-sparkles" href="/features/styles">

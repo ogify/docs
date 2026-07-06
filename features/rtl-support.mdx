@@ -47,18 +47,19 @@ const imageBuffer = await renderer.renderToImage(
 
 ## Template Support
 
-All built-in templates (like `basic`) fully support RTL. If you are creating a custom template, you can access the `isRTL` boolean in your renderer function to conditionally apply styles.
+All built-in templates (like `basic`) fully support RTL. In custom JSX templates, use `isRTL` with [`clsx`](/api-reference/core/clsx) for conditional layout:
 
-```typescript
-renderer: ({ params, isRTL }) => {
-  return `
-    <div style="direction: ${isRTL ? "rtl" : "ltr"}; text-align: ${
-    isRTL ? "right" : "left"
-  }">
-      ${params.title}
-    </div>
-  `;
-};
+```tsx
+renderer: ({ params, isRTL }) => (
+  <div
+    tw={clsx(
+      "flex flex-col w-full h-full p-16",
+      isRTL ? "items-end text-right" : "items-start text-left"
+    )}
+  >
+    <div tw="text-[64px] font-bold">{params.title}</div>
+  </div>
+),
 ```
 
 <Tip>
